@@ -1,13 +1,10 @@
+// src/utils/asyncHandler.ts
 import { Request, Response, NextFunction } from "express";
 
-type AsyncRequestHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => Promise<any>;
-
-export const asyncHandler = (requestHandler: AsyncRequestHandler) => {
+export const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>,
+) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    Promise.resolve(requestHandler(req, res, next)).catch(next);
+    Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
