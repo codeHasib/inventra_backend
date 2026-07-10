@@ -40,6 +40,4 @@ const settingsSchema = new Schema<ISettings>(
   { timestamps: true, versionKey: false },
 );
 
-settingsSchema.index({ shopId: 1 });
-
 export const Settings = model<ISettings>("Settings", settingsSchema);

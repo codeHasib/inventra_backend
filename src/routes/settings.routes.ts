@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { requireAuth, requireShopAccess } from "../middlewares/auth.middleware";
 import {
   getProfileHandler,
   updateProfileHandler,
@@ -8,6 +8,7 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireShopAccess);
 
 router.get("/profile", getProfileHandler);
 

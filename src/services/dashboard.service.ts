@@ -2,8 +2,6 @@ import { Types } from "mongoose";
 import { Product } from "../models/Product";
 import { Sale } from "../models/Sale";
 import { Purchase } from "../models/Purchase";
-import { Category } from "../models/Category";
-import { Supplier } from "../models/Supplier";
 import { Expense } from "../models/Expense";
 import { ProductStatus, PaymentStatus } from "../enums/index";
 
@@ -355,7 +353,7 @@ const getOverview = async (shopId: string): Promise<OverviewData> => {
       },
     ]),
     Expense.aggregate([
-      { $match: { shopId: oid } },
+      { $match: { shopId: oid, isDeleted: false } },
       {
         $group: {
           _id: null,
@@ -844,6 +842,7 @@ const getCharts = async (shopId: string): Promise<ChartData> => {
         {
           $match: {
             shopId: oid,
+            isDeleted: false,
             expenseDate: { $gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
           },
         },

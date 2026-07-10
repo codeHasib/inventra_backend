@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { Notification, INotification } from "../models/Notification";
-import { Product, IProduct } from "../models/Product";
+import { Product } from "../models/Product";
 import { Sale } from "../models/Sale";
 import { NotificationType } from "../enums/index";
 import { AppError } from "../utils/AppError";

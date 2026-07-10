@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { requireAuth, requireShopAccess } from "../middlewares/auth.middleware";
 import { importHandler, exportHandler } from "../controllers/import-export.controller";
 
 const upload = multer({
@@ -29,6 +29,7 @@ const upload = multer({
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireShopAccess);
 
 router.post("/import/:entity", upload.single("file"), importHandler);
 router.get("/export/:entity", exportHandler);

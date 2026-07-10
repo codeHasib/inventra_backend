@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { requireAuth, requireShopAccess } from "../middlewares/auth.middleware";
 import { validateRequest } from "../middlewares/validate.middleware";
 import { createExpenseSchema, updateExpenseSchema } from "../validators/expense.validator";
 import {
@@ -14,6 +14,7 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireShopAccess);
 
 router.get("/statistics", getExpenseStatisticsHandler);
 

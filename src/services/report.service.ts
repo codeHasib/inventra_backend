@@ -483,6 +483,7 @@ const getExpenseReport = async (
   const oid = new Types.ObjectId(shopId);
   const matchStage = {
     shopId: oid,
+    isDeleted: false,
     expenseDate: { $gte: dateRange.start, $lte: dateRange.end },
   };
 
@@ -572,6 +573,7 @@ const getProfitReport = async (
   };
   const expenseMatch = {
     shopId: oid,
+    isDeleted: false,
     expenseDate: { $gte: dateRange.start, $lte: dateRange.end },
   };
 

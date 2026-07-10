@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { requireAuth, requireShopAccess } from "../middlewares/auth.middleware";
 import {
   generateBarcodeHandler,
   setCustomBarcodeHandler,
@@ -12,6 +12,7 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireShopAccess);
 
 // Single product barcode
 router.post("/generate/:productId", generateBarcodeHandler);

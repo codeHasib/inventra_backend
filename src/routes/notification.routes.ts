@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { requireAuth, requireShopAccess } from "../middlewares/auth.middleware";
 import {
   getNotificationsHandler,
   getUnreadCountHandler,
@@ -15,6 +15,7 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireShopAccess);
 
 // Queries
 router.get("/", getNotificationsHandler);

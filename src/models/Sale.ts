@@ -27,6 +27,7 @@ export interface ISale extends Document {
   customerPhone: string;
   notes: string;
   saleDate: Date;
+  isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,6 +84,7 @@ const saleSchema = new Schema<ISale>(
     customerPhone: { type: String, default: "", trim: true },
     notes: { type: String, default: "", trim: true },
     saleDate: { type: Date, default: Date.now },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );
@@ -91,5 +93,6 @@ saleSchema.index({ shopId: 1, saleDate: -1 });
 saleSchema.index({ shopId: 1, invoiceNumber: 1 }, { unique: true });
 saleSchema.index({ shopId: 1, paymentStatus: 1 });
 saleSchema.index({ shopId: 1, paymentMethod: 1 });
+saleSchema.index({ shopId: 1, isDeleted: 1 });
 
 export const Sale = model<ISale>("Sale", saleSchema);
