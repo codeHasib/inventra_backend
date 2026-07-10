@@ -32,6 +32,7 @@ export enum PaymentStatus {
   PAID = "PAID",
   PARTIAL = "PARTIAL",
   CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED",
 }
 
 export enum EmbeddingStatus {
