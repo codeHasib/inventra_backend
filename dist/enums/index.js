@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EmbeddingStatus = exports.PaymentStatus = exports.ProductStatus = exports.PaymentMethod = exports.SubscriptionPlan = exports.SubscriptionStatus = void 0;
+exports.NotificationType = exports.EmbeddingStatus = exports.PaymentStatus = exports.ProductStatus = exports.PaymentMethod = exports.SubscriptionPlan = exports.SubscriptionStatus = void 0;
 // src/enums/index.ts
 var SubscriptionStatus;
 (function (SubscriptionStatus) {
@@ -36,6 +36,7 @@ var PaymentStatus;
     PaymentStatus["PAID"] = "PAID";
     PaymentStatus["PARTIAL"] = "PARTIAL";
     PaymentStatus["CANCELLED"] = "CANCELLED";
+    PaymentStatus["REFUNDED"] = "REFUNDED";
 })(PaymentStatus || (exports.PaymentStatus = PaymentStatus = {}));
 var EmbeddingStatus;
 (function (EmbeddingStatus) {
@@ -44,4 +45,12 @@ var EmbeddingStatus;
     EmbeddingStatus["COMPLETED"] = "COMPLETED";
     EmbeddingStatus["FAILED"] = "FAILED";
 })(EmbeddingStatus || (exports.EmbeddingStatus = EmbeddingStatus = {}));
+var NotificationType;
+(function (NotificationType) {
+    NotificationType["LOW_STOCK"] = "LOW_STOCK";
+    NotificationType["OUT_OF_STOCK"] = "OUT_OF_STOCK";
+    NotificationType["PRODUCT_EXPIRING"] = "PRODUCT_EXPIRING";
+    NotificationType["MONTHLY_SALES_SUMMARY"] = "MONTHLY_SALES_SUMMARY";
+    NotificationType["MONTHLY_PROFIT_SUMMARY"] = "MONTHLY_PROFIT_SUMMARY";
+})(NotificationType || (exports.NotificationType = NotificationType = {}));
 //# sourceMappingURL=index.js.map

@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const validate_middleware_1 = require("../middlewares/validate.middleware");
+const sale_validator_1 = require("../validators/sale.validator");
+const sale_controller_1 = require("../controllers/sale.controller");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.requireAuth);
+router.use(auth_middleware_1.requireShopAccess);
+router.post("/", (0, validate_middleware_1.validateRequest)(sale_validator_1.createSaleSchema), sale_controller_1.createSaleHandler);
+router.get("/", (0, validate_middleware_1.validateRequest)(sale_validator_1.listSalesSchema), sale_controller_1.listSalesHandler);
+router.get("/statistics", (0, validate_middleware_1.validateRequest)(sale_validator_1.saleStatisticsSchema), sale_controller_1.getSaleStatisticsHandler);
+router.get("/top-products", (0, validate_middleware_1.validateRequest)(sale_validator_1.topProductsSchema), sale_controller_1.getTopProductsHandler);
+router.get("/:id", (0, validate_middleware_1.validateRequest)(sale_validator_1.saleIdParamSchema), sale_controller_1.getSaleHandler);
+router.patch("/:id", (0, validate_middleware_1.validateRequest)(sale_validator_1.updateSaleSchema), sale_controller_1.updateSaleHandler);
+router.patch("/:id/refund", (0, validate_middleware_1.validateRequest)(sale_validator_1.saleIdParamSchema), sale_controller_1.refundSaleHandler);
+router.delete("/:id", (0, validate_middleware_1.validateRequest)(sale_validator_1.saleIdParamSchema), sale_controller_1.deleteSaleHandler);
+exports.default = router;
+//# sourceMappingURL=sale.routes.js.map

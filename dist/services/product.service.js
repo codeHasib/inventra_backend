@@ -18,7 +18,7 @@ const calculateProfitMargin = (purchasePrice, sellingPrice) => {
         return 0;
     return Number((((sellingPrice - purchasePrice) / purchasePrice) * 100).toFixed(2));
 };
-const generateSku = (name, shopId) => {
+const generateSku = (name, _shopId) => {
     const prefix = name
         .replace(/[^a-zA-Z0-9]/g, "")
         .substring(0, 3)
