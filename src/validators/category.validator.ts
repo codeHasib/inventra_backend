@@ -1,20 +1,24 @@
+// src/validators/category.validator.ts
 import { z } from "zod";
 
-export const CreateCategorySchema = z.object({
+export const createCategorySchema = z.object({
   body: z.object({
-    name: z.string({ required_error: "Name is required" }).trim().min(1),
-    description: z.string().trim().optional(),
-    color: z.string().trim().optional(),
-    icon: z.string().trim().optional(),
+    name: z.string().min(1, "Name is required"),
+    description: z.string().optional(),
+    color: z.string().optional(),
+    icon: z.string().optional(),
   }),
 });
 
-export const UpdateCategorySchema = z.object({
+export const updateCategorySchema = z.object({
   body: z.object({
-    name: z.string().trim().min(1).optional(),
-    description: z.string().trim().optional(),
-    color: z.string().trim().optional(),
-    icon: z.string().trim().optional(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    color: z.string().optional(),
+    icon: z.string().optional(),
     isActive: z.boolean().optional(),
+  }),
+  params: z.object({
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Category ID"),
   }),
 });
