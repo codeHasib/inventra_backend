@@ -7,6 +7,7 @@ import purchaseRoutes from "./purchase.routes";
 import saleRoutes from "./sale.routes";
 import dashboardRoutes from "./dashboard.routes";
 import aiKnowledgeRoutes from "./ai-knowledge.routes";
+import reportRoutes from "./report.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/purchases", purchaseRoutes);
 router.use("/sales", saleRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/ai/knowledge", aiKnowledgeRoutes);
+router.use("/reports", reportRoutes);
 
 export default router;
