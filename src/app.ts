@@ -4,31 +4,49 @@ import helmet from "helmet";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
-import { errorHandler } from "./middlewares/errorHandler";
+import rateLimit from "express-rate-limit";
+import { errorHandler } from "./middlewares/error.middleware";
+import routes from "./routes/index";
 
 export const app = express();
 
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    credentials: true,
+  }),
+);
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-app.use(helmet());
-app.use(compression());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-app.get("/", (req: Request, res: Response) => {
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, try again later" },
+});
+app.use("/api", limiter);
+
+app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: "Inventra AI Backend Running",
+    message: "Inventra AI Backend is running",
+    timestamp: new Date().toISOString(),
   });
 });
 
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use("/api", routes);
+
+app.use((_req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({
     success: false,
     statusCode: 404,
-    message: `Route ${req.originalUrl} not found`,
-    data: {},
+    message: "Route not found",
   });
 });
 

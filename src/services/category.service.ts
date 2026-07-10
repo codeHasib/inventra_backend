@@ -1,29 +1,32 @@
-// src/services/category.service.ts
 import { Category, ICategory } from "../models/Category";
 import { AppError } from "../utils/AppError";
-import { HTTP_STATUS } from "../constants/index";
 
 export const createCategory = async (
   shopId: string,
-  categoryData: Partial<ICategory>,
+  data: Partial<ICategory>,
 ): Promise<ICategory> => {
-  const existingCategory = await Category.findOne({
+  const existing = await Category.findOne({
     shopId,
-    name: categoryData.name,
+    name: data.name,
     isDeleted: false,
   });
 
-  if (existingCategory) {
-    throw new AppError(
-      "Category with this name already exists in your shop",
-      HTTP_STATUS.BAD_REQUEST,
-    );
+  if (existing) {
+    throw new AppError("A category with this name already exists in this shop", 400);
   }
 
-  return await Category.create({ ...categoryData, shopId });
+  return await Category.create({
+    shopId,
+    name: data.name,
+    description: data.description,
+    color: data.color,
+    icon: data.icon,
+  });
 };
 
-export const getCategories = async (shopId: string): Promise<ICategory[]> => {
+export const getCategories = async (
+  shopId: string,
+): Promise<ICategory[]> => {
   return await Category.find({ shopId, isDeleted: false }).sort({
     createdAt: -1,
   });
@@ -40,7 +43,7 @@ export const getCategoryById = async (
   });
 
   if (!category) {
-    throw new AppError("Category not found", HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Category not found", 404);
   }
 
   return category;
@@ -49,32 +52,36 @@ export const getCategoryById = async (
 export const updateCategory = async (
   shopId: string,
   categoryId: string,
-  updateData: Partial<ICategory>,
+  data: Partial<ICategory>,
 ): Promise<ICategory> => {
-  if (updateData.name) {
-    const existing = await Category.findOne({
+  if (data.name) {
+    const nameTaken = await Category.findOne({
       shopId,
-      name: updateData.name,
+      name: data.name,
       _id: { $ne: categoryId },
       isDeleted: false,
     });
 
-    if (existing) {
-      throw new AppError(
-        "Another category with this name already exists",
-        HTTP_STATUS.BAD_REQUEST,
-      );
+    if (nameTaken) {
+      throw new AppError("A category with this name already exists in this shop", 400);
     }
   }
 
+  const updateFields: Partial<ICategory> = {};
+  if (data.name !== undefined) updateFields.name = data.name;
+  if (data.description !== undefined) updateFields.description = data.description;
+  if (data.color !== undefined) updateFields.color = data.color;
+  if (data.icon !== undefined) updateFields.icon = data.icon;
+  if (data.isActive !== undefined) updateFields.isActive = data.isActive;
+
   const category = await Category.findOneAndUpdate(
     { _id: categoryId, shopId, isDeleted: false },
-    { $set: updateData },
+    { $set: updateFields },
     { new: true, runValidators: true },
   );
 
   if (!category) {
-    throw new AppError("Category not found", HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Category not found", 404);
   }
 
   return category;
@@ -91,6 +98,6 @@ export const deleteCategory = async (
   );
 
   if (!category) {
-    throw new AppError("Category not found", HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Category not found", 404);
   }
 };

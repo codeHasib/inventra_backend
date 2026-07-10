@@ -1,24 +1,26 @@
-// src/middlewares/error.middleware.ts
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError";
-import { HTTP_STATUS } from "../constants/index";
+import { logger } from "../utils/logger";
 
-export const globalErrorHandler = (
+export const errorHandler = (
   err: Error | AppError,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): void => {
-  let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+  let statusCode = 500;
   let message = "Internal Server Error";
 
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
+  } else {
+    logger.error(`Unhandled error: ${err.message}`);
   }
 
   res.status(statusCode).json({
     success: false,
+    statusCode,
     message,
     data: process.env.NODE_ENV === "development" ? err.stack : null,
   });

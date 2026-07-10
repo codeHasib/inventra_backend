@@ -1,53 +1,101 @@
-// src/validators/product.validator.ts
 import { z } from "zod";
 import { ProductStatus } from "../enums/index";
 
+const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+
 export const createProductSchema = z.object({
   body: z.object({
-    categoryId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Category ID"),
-    supplierId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Supplier ID"),
-    name: z.string().min(1, "Name is required"),
+    categoryId: z.string().regex(objectIdRegex, "Invalid Category ID"),
+    supplierId: z.string().regex(objectIdRegex, "Invalid Supplier ID"),
+    name: z.string().min(1, "Name is required").max(200),
     description: z.string().optional(),
-    sku: z.string().min(1, "SKU is required"),
+    sku: z.string().optional(),
     barcode: z.string().optional(),
-    buyPrice: z.number().min(0, "Buy price cannot be negative"),
-    sellPrice: z.number().min(0, "Sell price cannot be negative"),
+    brand: z.string().optional(),
+    purchasePrice: z.number().min(0, "Purchase price cannot be negative"),
+    sellingPrice: z.number().min(0, "Selling price cannot be negative"),
     currentStock: z.number().min(0).optional(),
     minimumStock: z.number().min(0).optional(),
+    maximumStock: z.number().min(0).optional(),
+    reorderLevel: z.number().min(0).optional(),
     unit: z.string().min(1, "Unit is required"),
-    brand: z.string().optional(),
     images: z.array(z.string()).optional(),
     expiryDate: z.string().datetime().optional(),
-    status: z.nativeEnum(ProductStatus).optional(),
+    manufactureDate: z.string().datetime().optional(),
   }),
 });
 
 export const updateProductSchema = z.object({
+  params: z.object({
+    id: z.string().regex(objectIdRegex, "Invalid Product ID"),
+  }),
   body: z.object({
     categoryId: z
       .string()
-      .regex(/^[0-9a-fA-F]{24}$/, "Invalid Category ID")
+      .regex(objectIdRegex, "Invalid Category ID")
       .optional(),
     supplierId: z
       .string()
-      .regex(/^[0-9a-fA-F]{24}$/, "Invalid Supplier ID")
+      .regex(objectIdRegex, "Invalid Supplier ID")
       .optional(),
-    name: z.string().optional(),
+    name: z.string().min(1).max(200).optional(),
     description: z.string().optional(),
     sku: z.string().optional(),
     barcode: z.string().optional(),
-    buyPrice: z.number().min(0).optional(),
-    sellPrice: z.number().min(0).optional(),
+    brand: z.string().optional(),
+    purchasePrice: z.number().min(0).optional(),
+    sellingPrice: z.number().min(0).optional(),
     currentStock: z.number().min(0).optional(),
     minimumStock: z.number().min(0).optional(),
+    maximumStock: z.number().min(0).optional(),
+    reorderLevel: z.number().min(0).optional(),
     unit: z.string().optional(),
-    brand: z.string().optional(),
     images: z.array(z.string()).optional(),
-    expiryDate: z.string().datetime().optional(),
+    expiryDate: z.string().datetime().nullable().optional(),
+    manufactureDate: z.string().datetime().nullable().optional(),
     status: z.nativeEnum(ProductStatus).optional(),
     isActive: z.boolean().optional(),
   }),
+});
+
+export const productIdParamSchema = z.object({
   params: z.object({
-    id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Product ID"),
+    id: z.string().regex(objectIdRegex, "Invalid Product ID"),
+  }),
+});
+
+export const updateStockSchema = z.object({
+  params: z.object({
+    id: z.string().regex(objectIdRegex, "Invalid Product ID"),
+  }),
+  body: z.object({
+    currentStock: z.number().min(0, "Stock cannot be negative"),
+  }),
+});
+
+export const listProductsSchema = z.object({
+  query: z.object({
+    page: z.coerce.number().int().min(1).default(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(10).optional(),
+    search: z.string().optional(),
+    categoryId: z.string().regex(objectIdRegex).optional(),
+    supplierId: z.string().regex(objectIdRegex).optional(),
+    status: z.nativeEnum(ProductStatus).optional(),
+    brand: z.string().optional(),
+    lowStock: z
+      .string()
+      .transform((val) => val === "true")
+      .optional(),
+    outOfStock: z
+      .string()
+      .transform((val) => val === "true")
+      .optional(),
+    isActive: z
+      .string()
+      .transform((val) => val === "true")
+      .optional(),
+    sort: z
+      .enum(["newest", "oldest", "name-asc", "price-asc", "price-desc", "stock-asc", "stock-desc"])
+      .optional(),
   }),
 });

@@ -1,132 +1,66 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/apiResponse";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { CATEGORY_MESSAGES } from "../constants/messages";
-import { AppError } from "../utils/AppError";
-import * as categoryService from "../services/category.service";
+import { sendResponse } from "../utils/response";
+import {
+  createCategory,
+  getCategories,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
+} from "../services/category.service";
 
-export const createCategory = asyncHandler(
+export const createCategoryHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const shopId = req.user?.shopId;
-    const userId = req.user?.id;
-
-    if (!shopId || !userId) {
-      throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Unauthorized access.");
-    }
-
-    const category = await categoryService.createCategory(
-      shopId,
-      userId,
-      req.body,
-    );
-
-    res
-      .status(HTTP_STATUS.CREATED)
-      .json(
-        new ApiResponse(
-          HTTP_STATUS.CREATED,
-          category,
-          CATEGORY_MESSAGES.CREATED_SUCCESSFULLY,
-        ),
-      );
+    const shopId = req.user!.shopId!;
+    const { name, description, color, icon } = req.body;
+    const category = await createCategory(shopId, {
+      name,
+      description,
+      color,
+      icon,
+    });
+    sendResponse(res, 201, "Category created successfully", category);
   },
 );
 
-export const getCategories = asyncHandler(
+export const listCategoriesHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const shopId = req.user?.shopId;
-
-    if (!shopId) {
-      throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Unauthorized access.");
-    }
-
-    const categories = await categoryService.getCategories(shopId);
-
-    res
-      .status(HTTP_STATUS.OK)
-      .json(
-        new ApiResponse(
-          HTTP_STATUS.OK,
-          categories,
-          "Categories retrieved successfully.",
-        ),
-      );
+    const shopId = req.user!.shopId!;
+    const categories = await getCategories(shopId);
+    sendResponse(res, 200, "Categories fetched successfully", categories);
   },
 );
 
-export const getCategoryById = asyncHandler(
+export const getCategoryHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const shopId = req.user?.shopId;
-    const { id } = req.params;
-
-    if (!shopId) {
-      throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Unauthorized access.");
-    }
-
-    const category = await categoryService.getCategoryById(shopId, id);
-
-    res
-      .status(HTTP_STATUS.OK)
-      .json(
-        new ApiResponse(
-          HTTP_STATUS.OK,
-          category,
-          "Category retrieved successfully.",
-        ),
-      );
+    const shopId = req.user!.shopId!;
+    const categoryId = req.params.id as string;
+    const category = await getCategoryById(shopId, categoryId);
+    sendResponse(res, 200, "Category fetched successfully", category);
   },
 );
 
-export const updateCategory = asyncHandler(
+export const updateCategoryHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const shopId = req.user?.shopId;
-    const userId = req.user?.id;
-    const { id } = req.params;
-
-    if (!shopId || !userId) {
-      throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Unauthorized access.");
-    }
-
-    const category = await categoryService.updateCategory(
-      shopId,
-      id,
-      userId,
-      req.body,
-    );
-
-    res
-      .status(HTTP_STATUS.OK)
-      .json(
-        new ApiResponse(
-          HTTP_STATUS.OK,
-          category,
-          CATEGORY_MESSAGES.UPDATED_SUCCESSFULLY,
-        ),
-      );
+    const shopId = req.user!.shopId!;
+    const categoryId = req.params.id as string;
+    const { name, description, color, icon, isActive } = req.body;
+    const category = await updateCategory(shopId, categoryId, {
+      name,
+      description,
+      color,
+      icon,
+      isActive,
+    });
+    sendResponse(res, 200, "Category updated successfully", category);
   },
 );
 
-export const deleteCategory = asyncHandler(
+export const deleteCategoryHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const shopId = req.user?.shopId;
-    const userId = req.user?.id;
-    const { id } = req.params;
-
-    if (!shopId || !userId) {
-      throw new AppError(HTTP_STATUS.UNAUTHORIZED, "Unauthorized access.");
-    }
-
-    await categoryService.deleteCategory(shopId, id, userId);
-
-    res
-      .status(HTTP_STATUS.OK)
-      .json(
-        new ApiResponse(
-          HTTP_STATUS.OK,
-          null,
-          CATEGORY_MESSAGES.DELETED_SUCCESSFULLY,
-        ),
-      );
+    const shopId = req.user!.shopId!;
+    const categoryId = req.params.id as string;
+    await deleteCategory(shopId, categoryId);
+    sendResponse(res, 200, "Category deleted successfully");
   },
 );

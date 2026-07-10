@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const validate_middleware_1 = require("../middlewares/validate.middleware");
+const product_validator_1 = require("../validators/product.validator");
+const product_controller_1 = require("../controllers/product.controller");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.requireAuth);
+router.use(auth_middleware_1.requireShopAccess);
+router.post("/", (0, validate_middleware_1.validateRequest)(product_validator_1.createProductSchema), product_controller_1.createProductHandler);
+router.get("/", (0, validate_middleware_1.validateRequest)(product_validator_1.listProductsSchema), product_controller_1.listProductsHandler);
+router.get("/statistics", product_controller_1.getProductStatisticsHandler);
+router.get("/low-stock", product_controller_1.getLowStockProductsHandler);
+router.get("/out-of-stock", product_controller_1.getOutOfStockProductsHandler);
+router.get("/:id", (0, validate_middleware_1.validateRequest)(product_validator_1.productIdParamSchema), product_controller_1.getProductHandler);
+router.patch("/:id", (0, validate_middleware_1.validateRequest)(product_validator_1.updateProductSchema), product_controller_1.updateProductHandler);
+router.delete("/:id", (0, validate_middleware_1.validateRequest)(product_validator_1.productIdParamSchema), product_controller_1.deleteProductHandler);
+router.patch("/:id/stock", (0, validate_middleware_1.validateRequest)(product_validator_1.updateStockSchema), product_controller_1.updateStockHandler);
+exports.default = router;
+//# sourceMappingURL=product.routes.js.map

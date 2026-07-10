@@ -1,8 +1,8 @@
-// src/models/Shop.ts
 import { Schema, model, Document } from "mongoose";
 import { SubscriptionPlan, SubscriptionStatus } from "../enums/index";
 
 export interface IShop extends Document {
+  ownerId: string;
   name: string;
   slug: string;
   businessType: string;
@@ -16,19 +16,50 @@ export interface IShop extends Document {
   subscriptionStatus: SubscriptionStatus;
   isActive: boolean;
   isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const shopSchema = new Schema<IShop>(
   {
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true, index: true },
-    businessType: { type: String, required: true },
-    phone: { type: String, required: true },
-    email: { type: String, required: true },
+    ownerId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 200,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    businessType: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
     logo: { type: String, default: "" },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "USD", uppercase: true },
     timezone: { type: String, default: "UTC" },
-    address: { type: String, required: true },
+    address: { type: String, required: true, trim: true },
     subscriptionPlan: {
       type: String,
       enum: Object.values(SubscriptionPlan),
@@ -40,9 +71,12 @@ const shopSchema = new Schema<IShop>(
       default: SubscriptionStatus.TRIALING,
     },
     isActive: { type: Boolean, default: true },
-    isDeleted: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false, index: true },
   },
   { timestamps: true, versionKey: false },
 );
+
+shopSchema.index({ ownerId: 1, isDeleted: 1 });
+shopSchema.index({ ownerId: 1, slug: 1 }, { unique: true });
 
 export const Shop = model<IShop>("Shop", shopSchema);

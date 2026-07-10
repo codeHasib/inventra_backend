@@ -1,53 +1,37 @@
 import "dotenv/config";
 import { app } from "./app";
 import { connectDatabase } from "./config/db";
+import { logger } from "./utils/logger";
 
 const PORT = process.env.PORT || 5000;
 
-const logger = {
-  info: (msg: string) => process.stdout.write(`[INFO] ${msg}\n`),
-  error: (msg: string) => process.stderr.write(`[ERROR] ${msg}\n`),
-};
-
-export const startServer = async (): Promise<void> => {
+const startServer = async (): Promise<void> => {
   await connectDatabase();
 
   const server = app.listen(PORT, () => {
     logger.info(`Inventra AI server running on port ${PORT}`);
   });
 
-  const exitHandler = () => {
-    if (server) {
-      server.close(() => {
-        logger.info("Server gracefully closed");
-        process.exit(1);
-      });
-    } else {
-      process.exit(1);
-    }
+  const gracefulShutdown = (signal: string) => {
+    logger.info(`${signal} received. Shutting down gracefully...`);
+    server.close(() => {
+      logger.info("Server closed");
+      process.exit(0);
+    });
   };
 
-  const unexpectedErrorHandler = (error: Error) => {
-    logger.error(`Unexpected Error: ${error.message}`);
-    exitHandler();
-  };
-
-  process.on("uncaughtException", unexpectedErrorHandler);
-  process.on("unhandledRejection", unexpectedErrorHandler);
-
-  process.on("SIGTERM", () => {
-    logger.info("SIGTERM received");
-    if (server) {
-      server.close();
-    }
+  process.on("uncaughtException", (error: Error) => {
+    logger.error(`Uncaught Exception: ${error.message}`);
+    process.exit(1);
   });
 
-  process.on("SIGINT", () => {
-    logger.info("SIGINT received");
-    if (server) {
-      server.close();
-    }
+  process.on("unhandledRejection", (reason: unknown) => {
+    logger.error(`Unhandled Rejection: ${String(reason)}`);
+    process.exit(1);
   });
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 };
 
 startServer();

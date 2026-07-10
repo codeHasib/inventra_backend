@@ -21,9 +21,17 @@ export enum PaymentMethod {
 }
 
 export enum ProductStatus {
-  AVAILABLE = "AVAILABLE",
+  ACTIVE = "ACTIVE",
+  LOW_STOCK = "LOW_STOCK",
   OUT_OF_STOCK = "OUT_OF_STOCK",
   DISCONTINUED = "DISCONTINUED",
+}
+
+export enum PaymentStatus {
+  PENDING = "PENDING",
+  PAID = "PAID",
+  PARTIAL = "PARTIAL",
+  CANCELLED = "CANCELLED",
 }
 
 export enum EmbeddingStatus {

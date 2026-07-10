@@ -1,4 +1,3 @@
-// src/models/Product.ts
 import { Schema, model, Document, Types } from "mongoose";
 import { ProductStatus } from "../enums/index";
 
@@ -10,17 +9,23 @@ export interface IProduct extends Document {
   description: string;
   sku: string;
   barcode: string;
-  buyPrice: number;
-  sellPrice: number;
+  brand: string;
+  purchasePrice: number;
+  sellingPrice: number;
+  profitMargin: number;
   currentStock: number;
   minimumStock: number;
+  maximumStock: number;
+  reorderLevel: number;
   unit: string;
-  brand: string;
   images: string[];
-  expiryDate: Date;
+  expiryDate: Date | null;
+  manufactureDate: Date | null;
   status: ProductStatus;
   isActive: boolean;
   isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const productSchema = new Schema<IProduct>(
@@ -29,7 +34,6 @@ const productSchema = new Schema<IProduct>(
       type: Schema.Types.ObjectId,
       ref: "Shop",
       required: true,
-      index: true,
     },
     categoryId: {
       type: Schema.Types.ObjectId,
@@ -41,27 +45,38 @@ const productSchema = new Schema<IProduct>(
       ref: "Supplier",
       required: true,
     },
-    name: { type: String, required: true },
-    description: { type: String, default: "" },
-    sku: { type: String, required: true, index: true },
-    barcode: { type: String, default: "" },
-    buyPrice: { type: Number, required: true, min: 0 },
-    sellPrice: { type: Number, required: true, min: 0 },
-    currentStock: { type: Number, default: 0 },
-    minimumStock: { type: Number, default: 5 },
-    unit: { type: String, required: true },
-    brand: { type: String, default: "" },
+    name: { type: String, required: true, trim: true, maxlength: 200 },
+    description: { type: String, default: "", trim: true },
+    sku: { type: String, required: true, trim: true, uppercase: true },
+    barcode: { type: String, default: "", trim: true },
+    brand: { type: String, default: "", trim: true },
+    purchasePrice: { type: Number, required: true, min: 0 },
+    sellingPrice: { type: Number, required: true, min: 0 },
+    profitMargin: { type: Number, default: 0 },
+    currentStock: { type: Number, default: 0, min: 0 },
+    minimumStock: { type: Number, default: 5, min: 0 },
+    maximumStock: { type: Number, default: 1000, min: 0 },
+    reorderLevel: { type: Number, default: 10, min: 0 },
+    unit: { type: String, required: true, trim: true },
     images: [{ type: String }],
-    expiryDate: { type: Date },
+    expiryDate: { type: Date, default: null },
+    manufactureDate: { type: Date, default: null },
     status: {
       type: String,
       enum: Object.values(ProductStatus),
-      default: ProductStatus.AVAILABLE,
+      default: ProductStatus.ACTIVE,
     },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );
+
+productSchema.index({ shopId: 1, isDeleted: 1 });
+productSchema.index({ shopId: 1, name: 1, sku: 1 }, { unique: true });
+productSchema.index({ shopId: 1, barcode: 1 }, { unique: true, sparse: true });
+productSchema.index({ shopId: 1, status: 1 });
+productSchema.index({ shopId: 1, categoryId: 1 });
+productSchema.index({ shopId: 1, supplierId: 1 });
 
 export const Product = model<IProduct>("Product", productSchema);

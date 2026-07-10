@@ -1,4 +1,3 @@
-// src/types/express.d.ts
 export {};
 
 declare global {
@@ -7,8 +6,9 @@ declare global {
       user?: {
         id: string;
         email: string;
+        role: string;
+        shopId: string | null;
       };
-      shopId?: string;
     }
   }
 }
