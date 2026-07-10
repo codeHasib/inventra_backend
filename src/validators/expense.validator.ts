@@ -1,25 +1,33 @@
-// src/validators/expense.validator.ts
-import { z } from 'zod';
+import { z } from "zod";
+import { PaymentMethod } from "../enums/index";
 
 export const createExpenseSchema = z.object({
   body: z.object({
-    title: z.string().min(1, 'Title is required'),
-    amount: z.number().min(0.01, 'Amount must be greater than zero'),
-    category: z.string().min(1, 'Category is required'),
-    description: z.string().optional(),
+    title: z.string().min(1, "Title is required").max(200),
+    amount: z.number().min(0.01, "Amount must be greater than 0"),
+    category: z.string().min(1, "Category is required").max(100),
+    paymentMethod: z.nativeEnum(PaymentMethod, {
+      message: "Invalid payment method",
+    }),
     expenseDate: z.string().datetime().optional(),
+    vendor: z.string().max(200).optional(),
+    notes: z.string().max(500).optional(),
+    receiptImage: z.string().optional(),
   }),
 });
 
 export const updateExpenseSchema = z.object({
-  body: z.object({
-    title: z.string().optional(),
-    amount: z.number().min(0.01).optional(),
-    category: z.string().optional(),
-    description: z.string().optional(),
-    expenseDate: z.string().datetime().optional(),
-  }),
   params: z.object({
-    id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Expense ID'),
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Expense ID"),
+  }),
+  body: z.object({
+    title: z.string().min(1).max(200).optional(),
+    amount: z.number().min(0.01).optional(),
+    category: z.string().min(1).max(100).optional(),
+    paymentMethod: z.nativeEnum(PaymentMethod).optional(),
+    expenseDate: z.string().datetime().optional(),
+    vendor: z.string().max(200).optional(),
+    notes: z.string().max(500).optional(),
+    receiptImage: z.string().optional(),
   }),
 });

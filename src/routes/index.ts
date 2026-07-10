@@ -11,6 +11,8 @@ import reportRoutes from "./report.routes";
 import notificationRoutes from "./notification.routes";
 import barcodeRoutes from "./barcode.routes";
 import importExportRoutes from "./import-export.routes";
+import expenseRoutes from "./expense.routes";
+import settingsRoutes from "./settings.routes";
 
 const router = Router();
 
@@ -26,5 +28,7 @@ router.use("/reports", reportRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/barcodes", barcodeRoutes);
 router.use("/import-export", importExportRoutes);
+router.use("/expenses", expenseRoutes);
+router.use("/settings", settingsRoutes);
 
 export default router;
