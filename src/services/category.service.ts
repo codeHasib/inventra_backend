@@ -1,11 +1,10 @@
-import { Category, ICategory } from "../models/category.model";
+// src/services/category.service.ts
+import { Category, ICategory } from "../models/Category";
 import { AppError } from "../utils/AppError";
-import { HTTP_STATUS } from "../constants/httpStatus";
-import { CATEGORY_MESSAGES } from "../constants/messages";
+import { HTTP_STATUS } from "../constants/index";
 
 export const createCategory = async (
   shopId: string,
-  userId: string,
   categoryData: Partial<ICategory>,
 ): Promise<ICategory> => {
   const existingCategory = await Category.findOne({
@@ -16,37 +15,32 @@ export const createCategory = async (
 
   if (existingCategory) {
     throw new AppError(
-      HTTP_STATUS.CONFLICT,
-      "Category name already exists in this shop.",
+      "Category with this name already exists in your shop",
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 
-  const category = await Category.create({
-    ...categoryData,
-    shopId,
-    createdBy: userId,
-    updatedBy: userId,
-  });
-
-  return category;
+  return await Category.create({ ...categoryData, shopId });
 };
 
 export const getCategories = async (shopId: string): Promise<ICategory[]> => {
-  return Category.find({ shopId, isDeleted: false });
+  return await Category.find({ shopId, isDeleted: false }).sort({
+    createdAt: -1,
+  });
 };
 
 export const getCategoryById = async (
   shopId: string,
-  id: string,
+  categoryId: string,
 ): Promise<ICategory> => {
   const category = await Category.findOne({
-    _id: id,
+    _id: categoryId,
     shopId,
     isDeleted: false,
   });
 
   if (!category) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, CATEGORY_MESSAGES.NOT_FOUND);
+    throw new AppError("Category not found", HTTP_STATUS.NOT_FOUND);
   }
 
   return category;
@@ -54,34 +48,33 @@ export const getCategoryById = async (
 
 export const updateCategory = async (
   shopId: string,
-  id: string,
-  userId: string,
+  categoryId: string,
   updateData: Partial<ICategory>,
 ): Promise<ICategory> => {
   if (updateData.name) {
-    const existingCategory = await Category.findOne({
-      _id: { $ne: id },
+    const existing = await Category.findOne({
       shopId,
       name: updateData.name,
+      _id: { $ne: categoryId },
       isDeleted: false,
     });
 
-    if (existingCategory) {
+    if (existing) {
       throw new AppError(
-        HTTP_STATUS.CONFLICT,
-        "Category name already exists in this shop.",
+        "Another category with this name already exists",
+        HTTP_STATUS.BAD_REQUEST,
       );
     }
   }
 
   const category = await Category.findOneAndUpdate(
-    { _id: id, shopId, isDeleted: false },
-    { ...updateData, updatedBy: userId },
+    { _id: categoryId, shopId, isDeleted: false },
+    { $set: updateData },
     { new: true, runValidators: true },
   );
 
   if (!category) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, CATEGORY_MESSAGES.NOT_FOUND);
+    throw new AppError("Category not found", HTTP_STATUS.NOT_FOUND);
   }
 
   return category;
@@ -89,18 +82,15 @@ export const updateCategory = async (
 
 export const deleteCategory = async (
   shopId: string,
-  id: string,
-  userId: string,
-): Promise<ICategory> => {
+  categoryId: string,
+): Promise<void> => {
   const category = await Category.findOneAndUpdate(
-    { _id: id, shopId, isDeleted: false },
-    { isDeleted: true, updatedBy: userId },
+    { _id: categoryId, shopId, isDeleted: false },
+    { $set: { isDeleted: true, isActive: false } },
     { new: true },
   );
 
   if (!category) {
-    throw new AppError(HTTP_STATUS.NOT_FOUND, CATEGORY_MESSAGES.NOT_FOUND);
+    throw new AppError("Category not found", HTTP_STATUS.NOT_FOUND);
   }
-
-  return category;
 };
