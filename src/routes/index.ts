@@ -8,6 +8,9 @@ import saleRoutes from "./sale.routes";
 import dashboardRoutes from "./dashboard.routes";
 import aiKnowledgeRoutes from "./ai-knowledge.routes";
 import reportRoutes from "./report.routes";
+import notificationRoutes from "./notification.routes";
+import barcodeRoutes from "./barcode.routes";
+import importExportRoutes from "./import-export.routes";
 
 const router = Router();
 
@@ -20,5 +23,8 @@ router.use("/sales", saleRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/ai/knowledge", aiKnowledgeRoutes);
 router.use("/reports", reportRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/barcodes", barcodeRoutes);
+router.use("/import-export", importExportRoutes);
 
 export default router;
