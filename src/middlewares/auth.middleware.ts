@@ -10,6 +10,7 @@ export const requireAuth = async (
 ): Promise<void> => {
   try {
     const cookieHeader = req.headers.cookie;
+    console.log("COOKIE HEADER:", req.headers.cookie);
 
     if (!cookieHeader) {
       return next(new AppError("No session cookie provided", 401));
