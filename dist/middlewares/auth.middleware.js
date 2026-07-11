@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requireShopAccess = exports.requireStaff = exports.requireOwner = exports.requireAuth = void 0;
+exports.requireShopAccess = exports.requireOnboarding = exports.requireStaff = exports.requireOwner = exports.requireAuth = void 0;
 const better_auth_1 = require("../config/better-auth");
 const AppError_1 = require("../utils/AppError");
 const Shop_1 = require("../models/Shop");
@@ -47,6 +47,16 @@ const requireStaff = (req, _res, next) => {
     next();
 };
 exports.requireStaff = requireStaff;
+const requireOnboarding = (req, _res, next) => {
+    if (!req.user) {
+        return next(new AppError_1.AppError("Unauthorized", 401));
+    }
+    if (req.user.shopId) {
+        return next(new AppError_1.AppError("User already has a shop", 400));
+    }
+    next();
+};
+exports.requireOnboarding = requireOnboarding;
 const requireShopAccess = async (req, _res, next) => {
     try {
         if (!req.user) {

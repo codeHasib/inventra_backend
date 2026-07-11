@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteShop = exports.updateShop = exports.getShopById = exports.getShopsByOwner = exports.createShop = void 0;
+exports.deleteShop = exports.updateShop = exports.getShopById = exports.getShopsByOwner = exports.createFirstShop = exports.createShop = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const Shop_1 = require("../models/Shop");
 const AppError_1 = require("../utils/AppError");
 const createShop = async (ownerId, shopData) => {
@@ -15,6 +19,45 @@ const createShop = async (ownerId, shopData) => {
     return await Shop_1.Shop.create({ ...shopData, ownerId });
 };
 exports.createShop = createShop;
+const createFirstShop = async (userId, shopData) => {
+    const db = mongoose_1.default.connection.db;
+    if (!db) {
+        throw new AppError_1.AppError("Database connection not available", 500);
+    }
+    const userDoc = await db
+        .collection("user")
+        .findOne({ _id: new mongoose_1.default.Types.ObjectId(userId) });
+    if (!userDoc) {
+        throw new AppError_1.AppError("User not found", 404);
+    }
+    if (userDoc.shopId) {
+        throw new AppError_1.AppError("User already has a shop", 400);
+    }
+    const existingShops = await Shop_1.Shop.countDocuments({
+        ownerId: userId,
+        isDeleted: false,
+    });
+    if (existingShops > 0) {
+        throw new AppError_1.AppError("User already has a shop", 400);
+    }
+    const existingSlug = await Shop_1.Shop.findOne({
+        ownerId: userId,
+        slug: shopData.slug,
+        isDeleted: false,
+    });
+    if (existingSlug) {
+        throw new AppError_1.AppError("A shop with this slug already exists", 400);
+    }
+    const shop = await Shop_1.Shop.create({ ...shopData, ownerId: userId });
+    const shopId = shop._id instanceof mongoose_1.default.Types.ObjectId
+        ? shop._id.toHexString()
+        : String(shop._id);
+    await db
+        .collection("user")
+        .updateOne({ _id: new mongoose_1.default.Types.ObjectId(userId) }, { $set: { shopId, role: "owner" } });
+    return shop;
+};
+exports.createFirstShop = createFirstShop;
 const getShopsByOwner = async (ownerId, options) => {
     const { page, limit, search } = options;
     const skip = (page - 1) * limit;

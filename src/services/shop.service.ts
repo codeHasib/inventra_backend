@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Shop, IShop } from "../models/Shop";
 import { AppError } from "../utils/AppError";
 
@@ -24,6 +25,62 @@ export const createShop = async (
   }
 
   return await Shop.create({ ...shopData, ownerId });
+};
+
+export const createFirstShop = async (
+  userId: string,
+  shopData: Partial<IShop>,
+): Promise<IShop> => {
+  const db = mongoose.connection.db;
+  if (!db) {
+    throw new AppError("Database connection not available", 500);
+  }
+
+  const userDoc = await db
+    .collection("user")
+    .findOne({ _id: new mongoose.Types.ObjectId(userId) });
+  if (!userDoc) {
+    throw new AppError("User not found", 404);
+  }
+
+  if (userDoc.shopId) {
+    throw new AppError("User already has a shop", 400);
+  }
+
+  const existingShops = await Shop.countDocuments({
+    ownerId: userId,
+    isDeleted: false,
+  });
+
+  if (existingShops > 0) {
+    throw new AppError("User already has a shop", 400);
+  }
+
+  const existingSlug = await Shop.findOne({
+    ownerId: userId,
+    slug: shopData.slug,
+    isDeleted: false,
+  });
+
+  if (existingSlug) {
+    throw new AppError("A shop with this slug already exists", 400);
+  }
+
+  const shop = await Shop.create({ ...shopData, ownerId: userId });
+
+  const shopId =
+    shop._id instanceof mongoose.Types.ObjectId
+      ? shop._id.toHexString()
+      : String(shop._id);
+
+  await db
+    .collection("user")
+    .updateOne(
+      { _id: new mongoose.Types.ObjectId(userId) },
+      { $set: { shopId, role: "owner" } },
+    );
+
+  return shop;
 };
 
 export const getShopsByOwner = async (

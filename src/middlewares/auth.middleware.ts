@@ -66,6 +66,22 @@ export const requireStaff = (
   next();
 };
 
+export const requireOnboarding = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void => {
+  if (!req.user) {
+    return next(new AppError("Unauthorized", 401));
+  }
+
+  if (req.user.shopId) {
+    return next(new AppError("User already has a shop", 400));
+  }
+
+  next();
+};
+
 export const requireShopAccess = async (
   req: Request,
   _res: Response,

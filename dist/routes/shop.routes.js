@@ -9,6 +9,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.requireAuth);
 router.get("/", (0, validate_middleware_1.validateRequest)(shop_validator_1.listShopsSchema), shop_controller_1.listShopsHandler);
 router.get("/:id", (0, validate_middleware_1.validateRequest)(shop_validator_1.shopIdParamSchema), shop_controller_1.getShopHandler);
+router.post("/onboard", auth_middleware_1.requireOnboarding, (0, validate_middleware_1.validateRequest)(shop_validator_1.createShopSchema), shop_controller_1.createFirstShopHandler);
 router.post("/", auth_middleware_1.requireOwner, (0, validate_middleware_1.validateRequest)(shop_validator_1.createShopSchema), shop_controller_1.createShopHandler);
 router.put("/:id", auth_middleware_1.requireOwner, (0, validate_middleware_1.validateRequest)(shop_validator_1.updateShopSchema), shop_controller_1.updateShopHandler);
 router.delete("/:id", auth_middleware_1.requireOwner, (0, validate_middleware_1.validateRequest)(shop_validator_1.shopIdParamSchema), shop_controller_1.deleteShopHandler);

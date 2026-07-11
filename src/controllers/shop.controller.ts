@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { sendResponse } from "../utils/response";
 import {
   createShop,
+  createFirstShop,
   getShopById,
   getShopsByOwner,
   updateShop,
@@ -15,6 +16,26 @@ export const createShopHandler = asyncHandler(
     const { name, slug, businessType, phone, email, address, logo, currency, timezone } =
       req.body;
     const shop = await createShop(ownerId, {
+      name,
+      slug,
+      businessType,
+      phone,
+      email,
+      address,
+      logo,
+      currency,
+      timezone,
+    });
+    sendResponse(res, 201, "Shop created successfully", shop);
+  },
+);
+
+export const createFirstShopHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { name, slug, businessType, phone, email, address, logo, currency, timezone } =
+      req.body;
+    const shop = await createFirstShop(userId, {
       name,
       slug,
       businessType,

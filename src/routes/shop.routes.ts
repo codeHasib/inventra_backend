@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireOwner } from "../middlewares/auth.middleware";
+import { requireAuth, requireOwner, requireOnboarding } from "../middlewares/auth.middleware";
 import { validateRequest } from "../middlewares/validate.middleware";
 import {
   createShopSchema,
@@ -9,6 +9,7 @@ import {
 } from "../validators/shop.validator";
 import {
   createShopHandler,
+  createFirstShopHandler,
   getShopHandler,
   listShopsHandler,
   updateShopHandler,
@@ -29,6 +30,13 @@ router.get(
   "/:id",
   validateRequest(shopIdParamSchema),
   getShopHandler,
+);
+
+router.post(
+  "/onboard",
+  requireOnboarding,
+  validateRequest(createShopSchema),
+  createFirstShopHandler,
 );
 
 router.post(
