@@ -4,6 +4,7 @@ import { sendResponse } from "../utils/response";
 import {
   createProduct,
   getProducts,
+  getAllProducts,
   getProductById,
   updateProduct,
   deleteProduct,
@@ -198,6 +199,20 @@ export const getLowStockProductsHandler = asyncHandler(
     sendResponse(res, 200, "Low stock products fetched successfully", products);
   },
 );
+
+export const getAllProductsHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.shopId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+    }
+
+    const products = await getAllProducts(req.user.shopId);
+
+    res.json({ success: true, message: "Products fetched", data: products });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+  }
+};
 
 export const getOutOfStockProductsHandler = asyncHandler(
   async (req: Request, res: Response) => {

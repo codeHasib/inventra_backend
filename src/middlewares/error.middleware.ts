@@ -14,6 +14,7 @@ export const errorHandler = (
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
+    logger.error(`${statusCode}: ${message}`);
   } else {
     logger.error(`Unhandled error: ${err.message}`);
   }

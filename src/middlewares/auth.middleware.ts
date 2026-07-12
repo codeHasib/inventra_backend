@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifySession } from "../config/better-auth";
+import { getAuth } from "../config/better-auth";
 import { AppError } from "../utils/AppError";
 import { Shop } from "../models/Shop";
 
@@ -9,29 +9,29 @@ export const requireAuth = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const cookieHeader = req.headers.cookie;
-    console.log("COOKIE HEADER:", req.headers.cookie);
+    const { fromNodeHeaders } = await import("better-auth/node");
+    const auth = await getAuth();
 
-    if (!cookieHeader) {
-      return next(new AppError("No session cookie provided", 401));
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if (!session) {
+      return next(new AppError("Unauthorized", 401));
     }
 
-    const result = await verifySession(cookieHeader);
-
-    if (!result) {
-      return next(new AppError("Invalid or expired session", 401));
-    }
+    const user = session.user as Record<string, unknown>;
 
     req.user = {
-      id: result.user.id,
-      email: result.user.email,
-      role: result.user.role || "staff",
-      shopId: result.user.shopId || null,
+      id: user.id as string,
+      email: user.email as string,
+      role: (user.role as string) || "staff",
+      shopId: (user.shopId as string) || null,
     };
 
     next();
-  } catch (error) {
-    next(error);
+  } catch {
+    next(new AppError("Unauthorized", 401));
   }
 };
 

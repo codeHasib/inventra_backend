@@ -4,6 +4,7 @@ import { sendResponse } from "../utils/response";
 import {
   createPurchase,
   getPurchases,
+  getAllPurchases,
   getPurchaseById,
   updatePurchase,
   deletePurchase,
@@ -63,6 +64,20 @@ export const listPurchasesHandler = asyncHandler(
     sendResponse(res, 200, "Purchases fetched successfully", result);
   },
 );
+
+export const getAllPurchasesHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.shopId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+    }
+
+    const purchases = await getAllPurchases(req.user.shopId);
+
+    res.json({ success: true, message: "Purchases fetched", data: purchases });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+  }
+};
 
 export const getPurchaseHandler = asyncHandler(
   async (req: Request, res: Response) => {

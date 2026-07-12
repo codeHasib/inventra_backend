@@ -1,2 +1,4 @@
 node_modules
 .env
+BACKEND_OVERVIEW.md
+backend-architecture-context.txt

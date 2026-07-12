@@ -243,6 +243,14 @@ export const getPurchases = async (
   };
 };
 
+export const getAllPurchases = async (shopId: string) => {
+  return Purchase.find({ shopId, isDeleted: false })
+    .populate("supplierId", "name company")
+    .populate("items.productId", "name sku")
+    .sort({ purchaseDate: -1 })
+    .lean();
+};
+
 export const getPurchaseById = async (
   shopId: string,
   purchaseId: string,

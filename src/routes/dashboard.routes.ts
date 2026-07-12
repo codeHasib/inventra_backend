@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth, requireShopAccess } from "../middlewares/auth.middleware";
 import {
+  getDashboardStatsHandler,
   getOverviewHandler,
   getRevenueHandler,
   getSalesHandler,
@@ -15,6 +16,7 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireShopAccess);
 
+router.get("/stats", getDashboardStatsHandler);
 router.get("/overview", getOverviewHandler);
 router.get("/revenue", getRevenueHandler);
 router.get("/sales", getSalesHandler);

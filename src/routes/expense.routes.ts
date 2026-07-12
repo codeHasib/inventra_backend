@@ -4,6 +4,7 @@ import { validateRequest } from "../middlewares/validate.middleware";
 import { createExpenseSchema, updateExpenseSchema } from "../validators/expense.validator";
 import {
   createExpenseHandler,
+  getAllExpensesHandler,
   getExpensesHandler,
   getExpenseByIdHandler,
   updateExpenseHandler,
@@ -17,6 +18,8 @@ router.use(requireAuth);
 router.use(requireShopAccess);
 
 router.get("/statistics", getExpenseStatisticsHandler);
+
+router.get("/all", getAllExpensesHandler);
 
 router.post("/", validateRequest(createExpenseSchema), createExpenseHandler);
 

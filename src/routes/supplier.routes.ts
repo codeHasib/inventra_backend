@@ -13,6 +13,7 @@ import {
   getSupplierHandler,
   updateSupplierHandler,
   deleteSupplierHandler,
+  getAllSuppliersHandler,
 } from "../controllers/supplier.controller";
 
 const router = Router();
@@ -20,23 +21,13 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireShopAccess);
 
-router.post(
-  "/",
-  validateRequest(createSupplierSchema),
-  createSupplierHandler,
-);
+router.post("/", validateRequest(createSupplierSchema), createSupplierHandler);
 
-router.get(
-  "/",
-  validateRequest(listSuppliersSchema),
-  listSuppliersHandler,
-);
+router.get("/", validateRequest(listSuppliersSchema), listSuppliersHandler);
 
-router.get(
-  "/:id",
-  validateRequest(supplierIdParamSchema),
-  getSupplierHandler,
-);
+router.get("/all", requireAuth, requireShopAccess, getAllSuppliersHandler);
+
+router.get("/:id", validateRequest(supplierIdParamSchema), getSupplierHandler);
 
 router.patch(
   "/:id",

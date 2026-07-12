@@ -38,6 +38,12 @@ export const createSupplier = async (
   });
 };
 
+export async function getAllSuppliers(shopId: string) {
+  return Supplier.find({ shopId, isDeleted: false })
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
 export const getSuppliers = async (
   shopId: string,
   options: {

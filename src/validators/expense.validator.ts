@@ -9,7 +9,7 @@ export const createExpenseSchema = z.object({
     paymentMethod: z.nativeEnum(PaymentMethod, {
       message: "Invalid payment method",
     }),
-    expenseDate: z.string().datetime().optional(),
+    expenseDate: z.coerce.date().optional(),
     vendor: z.string().max(200).optional(),
     notes: z.string().max(500).optional(),
     receiptImage: z.string().optional(),
@@ -25,7 +25,7 @@ export const updateExpenseSchema = z.object({
     amount: z.number().min(0.01).optional(),
     category: z.string().min(1).max(100).optional(),
     paymentMethod: z.nativeEnum(PaymentMethod).optional(),
-    expenseDate: z.string().datetime().optional(),
+    expenseDate: z.coerce.date().optional(),
     vendor: z.string().max(200).optional(),
     notes: z.string().max(500).optional(),
     receiptImage: z.string().optional(),

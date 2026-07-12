@@ -10,6 +10,7 @@ import {
 import {
   createPurchaseHandler,
   listPurchasesHandler,
+  getAllPurchasesHandler,
   getPurchaseHandler,
   updatePurchaseHandler,
   deletePurchaseHandler,
@@ -32,6 +33,8 @@ router.get(
   validateRequest(listPurchasesSchema),
   listPurchasesHandler,
 );
+
+router.get("/all", getAllPurchasesHandler);
 
 router.get("/statistics", getPurchaseStatisticsHandler);
 

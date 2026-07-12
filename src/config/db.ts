@@ -10,7 +10,8 @@ export const connectDatabase = async (): Promise<void> => {
 
   try {
     await mongoose.connect(mongoUri);
-    logger.info("MongoDB connected successfully");
+    const dbName = mongoose.connection.db?.databaseName ?? "unknown";
+    logger.info(`MongoDB connected successfully to database: ${dbName}`);
   } catch (error) {
     logger.error(`MongoDB connection failed: ${error}`);
     process.exit(1);

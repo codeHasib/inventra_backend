@@ -35,6 +35,14 @@ interface ListOptions {
   sortOrder?: "asc" | "desc";
 }
 
+// ─── All (non-paginated) ───────────────────────────────────────────
+
+export const getAllExpenses = async (shopId: string) => {
+  return Expense.find({ shopId: new Types.ObjectId(shopId), isDeleted: false })
+    .sort({ expenseDate: -1 })
+    .lean();
+};
+
 // ─── CRUD ──────────────────────────────────────────────────────────
 
 export const createExpense = async (

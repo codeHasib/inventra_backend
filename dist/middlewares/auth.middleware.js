@@ -2,28 +2,27 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireShopAccess = exports.requireOnboarding = exports.requireStaff = exports.requireOwner = exports.requireAuth = void 0;
 const better_auth_1 = require("../config/better-auth");
+const node_1 = require("better-auth/integrations/node");
 const AppError_1 = require("../utils/AppError");
 const Shop_1 = require("../models/Shop");
 const requireAuth = async (req, _res, next) => {
     try {
-        const cookieHeader = req.headers.cookie;
-        if (!cookieHeader) {
-            return next(new AppError_1.AppError("No session cookie provided", 401));
-        }
-        const result = await (0, better_auth_1.verifySession)(cookieHeader);
-        if (!result) {
-            return next(new AppError_1.AppError("Invalid or expired session", 401));
+        const session = await better_auth_1.auth.api.getSession({
+            headers: (0, node_1.fromNodeHeaders)(req.headers),
+        });
+        if (!session) {
+            return next(new AppError_1.AppError("Unauthorized", 401));
         }
         req.user = {
-            id: result.user.id,
-            email: result.user.email,
-            role: result.user.role || "staff",
-            shopId: result.user.shopId || null,
+            id: session.user.id,
+            email: session.user.email,
+            role: session.user.role || "staff",
+            shopId: session.user.shopId || null,
         };
         next();
     }
-    catch (error) {
-        next(error);
+    catch {
+        next(new AppError_1.AppError("Unauthorized", 401));
     }
 };
 exports.requireAuth = requireAuth;

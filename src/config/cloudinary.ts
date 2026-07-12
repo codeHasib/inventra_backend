@@ -1,8 +1,6 @@
 // src/config/cloudinary.ts
+// dotenv is loaded by server.ts before any imports — no need to call dotenv.config() here.
 import { v2 as cloudinary } from "cloudinary";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

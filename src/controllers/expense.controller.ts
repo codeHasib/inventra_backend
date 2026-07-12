@@ -7,6 +7,20 @@ import { PaymentMethod } from "../enums/index";
 const VALID_SORT_FIELDS = ["amount", "expenseDate", "createdAt", "title"];
 const VALID_SORT_ORDERS = ["asc", "desc"];
 
+export const getAllExpensesHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.shopId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+    }
+
+    const expenses = await expenseService.getAllExpenses(req.user.shopId);
+
+    res.json({ success: true, message: "Expenses fetched", data: expenses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+  }
+};
+
 export const createExpenseHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const shopId = req.user!.shopId!;

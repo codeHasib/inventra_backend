@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Shop, IShop } from "../models/Shop";
+import { Settings } from "../models/Settings";
 import { AppError } from "../utils/AppError";
 
 interface PaginationResult {
@@ -66,21 +67,52 @@ export const createFirstShop = async (
     throw new AppError("A shop with this slug already exists", 400);
   }
 
-  const shop = await Shop.create({ ...shopData, ownerId: userId });
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const shopId =
-    shop._id instanceof mongoose.Types.ObjectId
-      ? shop._id.toHexString()
-      : String(shop._id);
-
-  await db
-    .collection("user")
-    .updateOne(
-      { _id: new mongoose.Types.ObjectId(userId) },
-      { $set: { shopId, role: "owner" } },
+  try {
+    const [shop] = await Shop.create(
+      [{ ...shopData, ownerId: userId }],
+      { session },
     );
 
-  return shop;
+    const shopId =
+      shop._id instanceof mongoose.Types.ObjectId
+        ? shop._id.toHexString()
+        : String(shop._id);
+
+    await Settings.create(
+      [
+        {
+          shopId: shop._id,
+          businessName: shopData.name ?? "",
+          phone: shopData.phone ?? "",
+          email: shopData.email ?? "",
+          address: shopData.address ?? "",
+          currency: shopData.currency ?? "USD",
+          timezone: shopData.timezone ?? "UTC",
+          businessType: shopData.businessType ?? "",
+        },
+      ],
+      { session },
+    );
+
+    await db
+      .collection("user")
+      .updateOne(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $set: { shopId, role: "owner" } },
+        { session },
+      );
+
+    await session.commitTransaction();
+    return shop;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 export const getShopsByOwner = async (

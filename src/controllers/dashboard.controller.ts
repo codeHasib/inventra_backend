@@ -2,6 +2,46 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { sendResponse } from "../utils/response";
 import { dashboardService } from "../services/dashboard.service";
+import { logger } from "../utils/logger";
+
+export const getDashboardStatsHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.shopId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+    }
+
+    const shopId = req.user.shopId;
+    const limit = Number(req.query.limit) || 10;
+
+    const [stats, overview, revenue, sales, inventory, charts, topProducts, warnings] =
+      await Promise.all([
+        dashboardService.getDashboardStats(shopId),
+        dashboardService.getOverview(shopId),
+        dashboardService.getRevenue(shopId),
+        dashboardService.getSales(shopId),
+        dashboardService.getInventory(shopId),
+        dashboardService.getCharts(shopId),
+        dashboardService.getTopProducts(shopId, limit),
+        dashboardService.getWarnings(shopId),
+      ]);
+
+    const finalData = {
+      stats,
+      overview,
+      revenueData: revenue,
+      salesData: sales,
+      inventoryData: inventory,
+      chartsData: charts,
+      topProducts,
+      warnings,
+    };
+
+    res.json({ success: true, message: "Dashboard data fetched successfully", data: finalData });
+  } catch (error) {
+    logger.error(`Failed to fetch dashboard stats: ${error}`);
+    res.status(500).json({ success: false, message: "Server error occurred while fetching dashboard stats." });
+  }
+};
 
 export const getOverviewHandler = asyncHandler(
   async (req: Request, res: Response) => {

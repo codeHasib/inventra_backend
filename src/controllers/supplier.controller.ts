@@ -7,6 +7,7 @@ import {
   getSupplierById,
   updateSupplier,
   deleteSupplier,
+  getAllSuppliers,
 } from "../services/supplier.service";
 
 export const createSupplierHandler = asyncHandler(
@@ -38,10 +39,29 @@ export const listSuppliersHandler = asyncHandler(
         ? (req.query.isActive as string) === "true"
         : undefined;
 
-    const result = await getSuppliers(shopId, { page, limit, search, isActive });
+    const result = await getSuppliers(shopId, {
+      page,
+      limit,
+      search,
+      isActive,
+    });
     sendResponse(res, 200, "Suppliers fetched successfully", result);
   },
 );
+
+export const getAllSuppliersHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.shopId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+    }
+
+    const suppliers = await getAllSuppliers(req.user.shopId);
+
+    res.json({ success: true, message: "Suppliers fetched", data: suppliers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+  }
+};
 
 export const getSupplierHandler = asyncHandler(
   async (req: Request, res: Response) => {
@@ -56,8 +76,16 @@ export const updateSupplierHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const shopId = req.user!.shopId!;
     const supplierId = req.params.id as string;
-    const { name, company, phone, email, address, tradeLicense, notes, isActive } =
-      req.body;
+    const {
+      name,
+      company,
+      phone,
+      email,
+      address,
+      tradeLicense,
+      notes,
+      isActive,
+    } = req.body;
     const supplier = await updateSupplier(shopId, supplierId, {
       name,
       company,

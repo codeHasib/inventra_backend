@@ -12,6 +12,7 @@ import {
 import {
   createSaleHandler,
   listSalesHandler,
+  getAllSalesHandler,
   getSaleHandler,
   updateSaleHandler,
   deleteSaleHandler,
@@ -36,6 +37,8 @@ router.get(
   validateRequest(listSalesSchema),
   listSalesHandler,
 );
+
+router.get("/all", getAllSalesHandler);
 
 router.get(
   "/statistics",

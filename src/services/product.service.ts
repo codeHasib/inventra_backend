@@ -506,6 +506,13 @@ export const getProductStatistics = async (
   };
 };
 
+export const getAllProducts = async (shopId: string) => {
+  return Product.find({ shopId, isDeleted: false })
+    .populate("categoryId")
+    .sort({ createdAt: -1 })
+    .lean();
+};
+
 export const getLowStockProducts = async (
   shopId: string,
 ): Promise<IProduct[]> => {

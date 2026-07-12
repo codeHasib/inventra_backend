@@ -1,6 +1,7 @@
+import OpenAI from "openai";
 import { Types } from "mongoose";
 import mammoth from "mammoth";
-import { v2 as cloudinary } from "cloudinary";
+import { cloudinary } from "../config/cloudinary";
 import {
   KnowledgeDocument,
   KnowledgeChunk,
@@ -12,8 +13,14 @@ import {
 import { AppError } from "../utils/AppError";
 import { HTTP_STATUS } from "../constants/index";
 import { EmbeddingStatus } from "../enums/index";
+import { logger } from "../utils/logger";
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY?.trim(),
+  baseURL: "https://api.groq.com/openai/v1",
+});
 
 interface PaginationResult {
   documents: IKnowledgeDocument[];
@@ -103,83 +110,75 @@ const chunkText = (text: string, targetWords = 650): string[] => {
   return chunks.filter((c) => c.split(/\s+/).length >= 10);
 };
 
-const analyzeWithGemini = async (
+const analyzeWithGroq = async (
   text: string,
 ): Promise<{
   summary: string;
-  businessInsights: string;
-  keywords: string[];
-  recommendedActions: string[];
+  keyPoints: string[];
+  recommendations: string[];
+  rawAnalysis: string;
 }> => {
-  const { GoogleGenAI } = await import("@google/genai");
-  const genai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || "",
-  });
-
   const truncatedText = text.substring(0, 8000);
 
   const prompt = `Analyze the following business document and provide:
 1. A concise summary (2-3 paragraphs)
-2. Key business insights (bullet points)
-3. Relevant keywords (array of strings, max 15)
-4. Recommended actions for the business owner (array of strings, max 10)
+2. Key points as an array of strings (max 10 bullet points)
+3. Recommendations for the business owner as an array of strings (max 8)
 
 Document:
 ${truncatedText}
 
-Respond in JSON format:
+Respond ONLY in this exact JSON format, no markdown fences:
 {
   "summary": "...",
-  "businessInsights": "...",
-  "keywords": ["..."],
-  "recommendedActions": ["..."]
+  "keyPoints": ["...", "..."],
+  "recommendations": ["...", "..."]
 }`;
 
   try {
-    const response = await genai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: prompt,
-      config: {
-        temperature: 0.3,
-        maxOutputTokens: 2000,
-      },
+    const response = await groq.chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+      max_tokens: 2000,
     });
 
-    const textResponse = response.text;
+    const textResponse = response.choices[0]?.message?.content;
     if (!textResponse) {
       return {
         summary: "",
-        businessInsights: "",
-        keywords: [],
-        recommendedActions: [],
+        keyPoints: [],
+        recommendations: [],
+        rawAnalysis: "",
       };
     }
 
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return {
-        summary: textResponse,
-        businessInsights: "",
-        keywords: [],
-        recommendedActions: [],
+        summary: "",
+        keyPoints: [],
+        recommendations: [],
+        rawAnalysis: textResponse,
       };
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
     return {
       summary: parsed.summary || "",
-      businessInsights: parsed.businessInsights || "",
-      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
-      recommendedActions: Array.isArray(parsed.recommendedActions)
-        ? parsed.recommendedActions
+      keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
+      recommendations: Array.isArray(parsed.recommendations)
+        ? parsed.recommendations
         : [],
+      rawAnalysis: textResponse,
     };
-  } catch {
+  } catch (error) {
+    logger.error(`analyzeWithGroq FAILED: ${error}`);
     return {
       summary: "",
-      businessInsights: "",
-      keywords: [],
-      recommendedActions: [],
+      keyPoints: [],
+      recommendations: [],
+      rawAnalysis: "",
     };
   }
 };
@@ -257,7 +256,7 @@ const processDocument = async (
       await KnowledgeChunk.insertMany(chunkDocs);
     }
 
-    const analysis = await analyzeWithGemini(normalizedText);
+    const analysis = await analyzeWithGroq(normalizedText);
 
     await KnowledgeDocument.findOneAndUpdate(
       { _id: documentId, shopId },
@@ -268,7 +267,8 @@ const processDocument = async (
         },
       },
     );
-  } catch {
+  } catch (error) {
+    logger.error(`processEmbedding FAILED for document ${documentId}: ${error}`);
     await KnowledgeDocument.findOneAndUpdate(
       { _id: documentId, shopId },
       { $set: { status: EmbeddingStatus.FAILED } },
@@ -330,7 +330,7 @@ const getKnowledgeList = async (
   if (search) {
     filter.$or = [
       { fileName: { $regex: search, $options: "i" } },
-      { "analysis.keywords": { $regex: search, $options: "i" } },
+      { "analysis.keyPoints": { $regex: search, $options: "i" } },
     ];
   }
 
@@ -403,7 +403,8 @@ const deleteKnowledge = async (
     await cloudinary.uploader.destroy(document.cloudinaryPublicId, {
       resource_type: "raw",
     });
-  } catch {
+  } catch (error) {
+    logger.error(`Cloudinary deletion FAILED for ${document.cloudinaryPublicId}: ${error}`);
     // Continue even if Cloudinary deletion fails
   }
 
@@ -513,27 +514,123 @@ const searchRelevantChunks = async (
   return scored.slice(0, limit).map((s) => s.chunk);
 };
 
+const MAX_CONTEXT_CHARS = 4000;
+const MAX_HISTORY_TURNS = 3;
+
+export interface ReportSection {
+  header: string;
+  content: string;
+  priority: "High" | "Medium" | "Low";
+}
+
+export interface BusinessReport {
+  title: string;
+  summary: string;
+  sections: ReportSection[];
+  recommendations: string[];
+}
+
+const buildFallbackReport = (rawText: string): BusinessReport => ({
+  title: "Analysis Report",
+  summary: rawText || "Unable to generate analysis.",
+  sections: [],
+  recommendations: [],
+});
+
+const parseReportResponse = (raw: string): BusinessReport => {
+  const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return buildFallbackReport(raw);
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      title: typeof parsed.title === "string" ? parsed.title : "Analysis Report",
+      summary: typeof parsed.summary === "string" ? parsed.summary : "",
+      sections: Array.isArray(parsed.sections)
+        ? parsed.sections.map((s: Record<string, unknown>) => ({
+            header: typeof s.header === "string" ? s.header : "",
+            content: typeof s.content === "string" ? s.content : "",
+            priority: ["High", "Medium", "Low"].includes(s.priority as string)
+              ? (s.priority as "High" | "Medium" | "Low")
+              : "Medium",
+          }))
+        : [],
+      recommendations: Array.isArray(parsed.recommendations)
+        ? parsed.recommendations.filter((r: unknown) => typeof r === "string")
+        : [],
+    };
+  } catch {
+    return buildFallbackReport(raw);
+  }
+};
+
+const getOptimizedPrompt = (
+  context: string,
+  question: string,
+  history: { question: string; answer: string }[],
+): string => {
+  let trimmedContext = context;
+  if (context.length > MAX_CONTEXT_CHARS) {
+    trimmedContext = context.substring(0, MAX_CONTEXT_CHARS) + "\n[...truncated for brevity]";
+  }
+
+  const recentHistory = history.slice(-MAX_HISTORY_TURNS);
+  const historyBlock = recentHistory.length > 0
+    ? recentHistory
+        .map((h) => `User: ${h.question}\nAssistant: ${h.answer}`)
+        .join("\n\n")
+    : "";
+
+  return `You are a business analysis expert. Always respond in valid JSON format only. Do not add conversational text or markdown fences. The JSON must follow this exact structure:
+
+{
+  "title": "string — a short title for the report",
+  "summary": "string — a concise 2-3 paragraph executive summary",
+  "sections": [
+    {
+      "header": "string — section heading",
+      "content": "string — detailed analysis for this section",
+      "priority": "High | Medium | Low"
+    }
+  ],
+  "recommendations": ["string — actionable recommendation 1", "..."]
+}
+
+Rules:
+- Always return valid JSON only, no extra text before or after.
+- Include at least 1 section, at most 5.
+- Each recommendation must be a specific, actionable string.
+- Use the provided business knowledge context to populate the fields.
+
+${historyBlock ? `Previous conversation:\n${historyBlock}\n\n` : ""}Business Knowledge Context:
+${trimmedContext}
+
+User Question: ${question}`;
+};
+
 const chat = async (
   shopId: string,
   question: string,
 ): Promise<{
-  answer: string;
+  report: BusinessReport;
   sources: { documentId: string; fileName: string; chunkIndex: number }[];
 }> => {
   const relevantChunks = await searchRelevantChunks(shopId, question, 5);
 
   if (relevantChunks.length === 0) {
-    const answer =
-      "I couldn't find this information in your business knowledge. Please upload relevant documents first.";
+    const report = buildFallbackReport(
+      "I couldn't find this information in your business knowledge. Please upload relevant documents first.",
+    );
 
     await ChatHistory.create({
       shopId: new Types.ObjectId(shopId),
       question,
-      answer,
+      answer: JSON.stringify(report),
       sources: [],
     });
 
-    return { answer, sources: [] };
+    return { report, sources: [] };
   }
 
   const context = relevantChunks
@@ -543,31 +640,28 @@ const chat = async (
     })
     .join("\n\n---\n\n");
 
-  const prompt = `You are a helpful business assistant for an inventory management system. Answer the user's question based ONLY on the provided business knowledge below. If the answer cannot be found in the provided context, say "I couldn't find this information in your business knowledge."
+  const recentChats = await ChatHistory.find({ shopId })
+    .sort({ createdAt: -1 })
+    .limit(MAX_HISTORY_TURNS * 2)
+    .lean();
 
-Business Knowledge Context:
-${context}
+  const history = recentChats.reverse().map((c) => ({
+    question: c.question,
+    answer: c.answer,
+  }));
 
-User Question: ${question}
-
-Provide a clear, concise, and helpful answer based on the business knowledge above. If you reference specific information, mention which document it comes from.`;
+  const prompt = getOptimizedPrompt(context, question, history);
 
   try {
-    const { GoogleGenAI } = await import("@google/genai");
-    const genai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY || "",
+    const response = await groq.chat.completions.create({
+      model: GROQ_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+      max_tokens: 1500,
     });
 
-    const response = await genai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: prompt,
-      config: {
-        temperature: 0.3,
-        maxOutputTokens: 1500,
-      },
-    });
-
-    const answer = response.text || "I couldn't generate a response.";
+    const rawContent = response.choices[0]?.message?.content || "";
+    const report = parseReportResponse(rawContent);
 
     const sources = relevantChunks.map((chunk) => {
       const doc = chunk.documentId as unknown as { _id: Types.ObjectId; fileName: string };
@@ -581,23 +675,26 @@ Provide a clear, concise, and helpful answer based on the business knowledge abo
     await ChatHistory.create({
       shopId: new Types.ObjectId(shopId),
       question,
-      answer,
+      answer: JSON.stringify(report),
       sources,
     });
 
-    return { answer, sources };
-  } catch {
-    const answer =
-      "I encountered an error processing your question. Please try again.";
+    return { report, sources };
+  } catch (error) {
+    logger.error(`chat FAILED for shop ${shopId}: ${error}`);
+
+    const report = buildFallbackReport(
+      "I encountered an error processing your question. Please try again.",
+    );
 
     await ChatHistory.create({
       shopId: new Types.ObjectId(shopId),
       question,
-      answer,
+      answer: JSON.stringify(report),
       sources: [],
     });
 
-    return { answer, sources: [] };
+    return { report, sources: [] };
   }
 };
 
@@ -627,6 +724,19 @@ const getChatHistory = async (
   };
 };
 
+const getChatById = async (
+  shopId: string,
+  chatId: string,
+): Promise<IChatHistory> => {
+  const chat = await ChatHistory.findOne({ _id: chatId, shopId });
+
+  if (!chat) {
+    throw new AppError("Chat record not found", HTTP_STATUS.NOT_FOUND);
+  }
+
+  return chat;
+};
+
 export const aiKnowledgeService = {
   uploadKnowledge,
   getKnowledgeList,
@@ -636,4 +746,5 @@ export const aiKnowledgeService = {
   getExtractedText,
   chat,
   getChatHistory,
+  getChatById,
 };

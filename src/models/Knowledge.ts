@@ -3,9 +3,9 @@ import { EmbeddingStatus } from "../enums/index";
 
 export interface IKnowledgeDocumentAnalysis {
   summary: string;
-  businessInsights: string;
-  keywords: string[];
-  recommendedActions: string[];
+  keyPoints: string[];
+  recommendations: string[];
+  rawAnalysis: string;
 }
 
 export interface IKnowledgeDocument extends Document {
@@ -51,9 +51,9 @@ export interface IChatHistory extends Document {
 const knowledgeDocumentAnalysisSchema = new Schema<IKnowledgeDocumentAnalysis>(
   {
     summary: { type: String, default: "" },
-    businessInsights: { type: String, default: "" },
-    keywords: [{ type: String }],
-    recommendedActions: [{ type: String }],
+    keyPoints: [{ type: String }],
+    recommendations: [{ type: String }],
+    rawAnalysis: { type: String, default: "" },
   },
   { _id: false },
 );

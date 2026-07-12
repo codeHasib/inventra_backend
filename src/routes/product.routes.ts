@@ -11,6 +11,7 @@ import {
 import {
   createProductHandler,
   listProductsHandler,
+  getAllProductsHandler,
   getProductHandler,
   updateProductHandler,
   deleteProductHandler,
@@ -30,6 +31,8 @@ router.post(
   validateRequest(createProductSchema),
   createProductHandler,
 );
+
+router.get("/all", getAllProductsHandler);
 
 router.get(
   "/",

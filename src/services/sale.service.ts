@@ -265,6 +265,12 @@ export const getSales = async (
   };
 };
 
+export const getAllSales = async (shopId: string) => {
+  return Sale.find({ shopId, isDeleted: false })
+    .sort({ saleDate: -1 })
+    .lean();
+};
+
 export const getSaleById = async (
   shopId: string,
   saleId: string,

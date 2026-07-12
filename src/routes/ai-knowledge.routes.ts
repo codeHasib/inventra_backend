@@ -10,6 +10,7 @@ import {
   getExtractedTextHandler,
   chatHandler,
   getChatHistoryHandler,
+  exportChatPdfHandler,
 } from "../controllers/ai-knowledge.controller";
 
 const upload = multer({
@@ -47,6 +48,8 @@ router.post(
 router.get("/", listKnowledgeHandler);
 
 router.get("/chat/history", getChatHistoryHandler);
+
+router.get("/chat/export/:chatId", exportChatPdfHandler);
 
 router.post("/chat", chatHandler);
 
