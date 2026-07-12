@@ -16,7 +16,7 @@ const index_1 = __importDefault(require("./routes/index"));
 exports.app = (0, express_1.default)();
 exports.app.use((0, helmet_1.default)());
 exports.app.use((0, cors_1.default)({
-    origin: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    origin: process.env.BETTER_AUTH_URL,
     credentials: true,
 }));
 exports.app.use((0, compression_1.default)());
