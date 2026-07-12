@@ -14,7 +14,7 @@ export const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.BETTER_AUTH_URL,
+    origin: "https://inventra-ai-lac.vercel.app",
     credentials: true,
   }),
 );
