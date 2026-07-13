@@ -16,6 +16,7 @@ app.use(
   cors({
     origin: "https://inventra-ai-lac.vercel.app",
     credentials: true,
+    exposedHeaders: ["set-cookie"],
   }),
 );
 app.use(compression());
