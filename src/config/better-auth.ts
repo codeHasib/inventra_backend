@@ -41,8 +41,9 @@ export async function getAuth() {
       "http://localhost:3000",
     ],
     advanced: {
-      crossSubDomainCookies: {
-        enabled: true,
+      defaultCookieAttributes: {
+        sameSite: "none",
+        secure: true,
       },
     },
     session: {
@@ -59,11 +60,6 @@ export async function getAuth() {
           type: "string",
         },
       },
-    },
-    cookie: {
-      sameSite: "none",
-      secure: true,
-      domain: undefined,
     },
   });
 
