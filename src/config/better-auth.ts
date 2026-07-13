@@ -24,7 +24,9 @@ export async function getAuth() {
   const db = client.db("inventraAI");
 
   authInstance = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL,
+    baseURL:
+      process.env.BETTER_AUTH_URL ||
+      "https://inventra-backend-mu.vercel.app",
     database: mongodbAdapter(db, {
       client,
       usePlural: false,
@@ -34,7 +36,15 @@ export async function getAuth() {
       enabled: true,
     },
     secret: BETTER_AUTH_SECRET,
-    trustedOrigins: ["https://inventra-ai-lac.vercel.app"],
+    trustedOrigins: [
+      "https://inventra-ai-lac.vercel.app",
+      "http://localhost:3000",
+    ],
+    advanced: {
+      crossSubDomainCookies: {
+        enabled: true,
+      },
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
@@ -53,12 +63,7 @@ export async function getAuth() {
     cookie: {
       sameSite: "none",
       secure: true,
-      domain: null,
-      advanced: {
-        crossSubDomainCookies: {
-          enabled: true,
-        },
-      },
+      domain: undefined,
     },
   });
 
