@@ -31,9 +31,10 @@ export async function getAuth() {
       transaction: false,
     }),
     emailAndPassword: {
-      enabled: true, // This is the critical line!
+      enabled: true,
     },
     secret: BETTER_AUTH_SECRET,
+    trustedOrigins: ["https://inventra-ai-lac.vercel.app"],
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
@@ -53,6 +54,11 @@ export async function getAuth() {
       sameSite: "none",
       secure: true,
       domain: null,
+      advanced: {
+        crossSubDomainCookies: {
+          enabled: true,
+        },
+      },
     },
   });
 
