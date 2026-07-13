@@ -322,7 +322,7 @@ export const importProducts = async (
   ]);
 
   const existingSkus = new Set(existingProducts.map((p) => p.sku.toUpperCase()));
-  const existingBarcodes = new Set(existingProducts.filter((p) => p.barcode).map((p) => p.barcode));
+  const existingBarcodes = new Set(existingProducts.filter((p) => p.barcode).map((p) => p.barcode as string));
 
   const categoryIdMap = new Map<string, string>();
   const categoryNameMap = new Map<string, string>();

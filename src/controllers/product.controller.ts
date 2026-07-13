@@ -17,46 +17,59 @@ import { ProductStatus } from "../enums/index";
 
 export const createProductHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const shopId = req.user!.shopId!;
-    const {
-      categoryId,
-      supplierId,
-      name,
-      description,
-      sku,
-      barcode,
-      brand,
-      purchasePrice,
-      sellingPrice,
-      currentStock,
-      minimumStock,
-      maximumStock,
-      reorderLevel,
-      unit,
-      images,
-      expiryDate,
-      manufactureDate,
-    } = req.body;
-    const product = await createProduct(shopId, {
-      categoryId,
-      supplierId,
-      name,
-      description,
-      sku,
-      barcode,
-      brand,
-      purchasePrice,
-      sellingPrice,
-      currentStock,
-      minimumStock,
-      maximumStock,
-      reorderLevel,
-      unit,
-      images,
-      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
-      manufactureDate: manufactureDate ? new Date(manufactureDate) : undefined,
-    } as Partial<import("../models/Product").IProduct>);
-    sendResponse(res, 201, "Product created successfully", product);
+    try {
+      const shopId = req.user!.shopId!;
+      const {
+        categoryId,
+        supplierId,
+        name,
+        description,
+        sku,
+        barcode,
+        brand,
+        purchasePrice,
+        sellingPrice,
+        currentStock,
+        minimumStock,
+        maximumStock,
+        reorderLevel,
+        unit,
+        images,
+        expiryDate,
+        manufactureDate,
+      } = req.body;
+      const product = await createProduct(shopId, {
+        categoryId,
+        supplierId,
+        name,
+        description,
+        sku,
+        barcode,
+        brand,
+        purchasePrice,
+        sellingPrice,
+        currentStock,
+        minimumStock,
+        maximumStock,
+        reorderLevel,
+        unit,
+        images,
+        expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+        manufactureDate: manufactureDate ? new Date(manufactureDate) : undefined,
+      } as Partial<import("../models/Product").IProduct>);
+      sendResponse(res, 201, "Product created successfully", product);
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        const duplicateField = Object.keys(error.keyPattern || {}).join(", ");
+        return res.status(400).json({
+          success: false,
+          message: duplicateField
+            ? `A product with this ${duplicateField} already exists.`
+            : "A product with this SKU, Slug, or Barcode already exists.",
+        });
+      }
+      throw error;
+    }
   },
 );
 

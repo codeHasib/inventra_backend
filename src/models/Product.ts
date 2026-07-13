@@ -8,7 +8,7 @@ export interface IProduct extends Document {
   name: string;
   description: string;
   sku: string;
-  barcode: string;
+  barcode: string | null;
   brand: string;
   purchasePrice: number;
   sellingPrice: number;
@@ -48,7 +48,7 @@ const productSchema = new Schema<IProduct>(
     name: { type: String, required: true, trim: true, maxlength: 200 },
     description: { type: String, default: "", trim: true },
     sku: { type: String, required: true, trim: true, uppercase: true },
-    barcode: { type: String, default: "", trim: true },
+    barcode: { type: String, default: null, trim: true, sparse: true },
     brand: { type: String, default: "", trim: true },
     purchasePrice: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },

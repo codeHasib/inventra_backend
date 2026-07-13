@@ -44,7 +44,7 @@ const generateSku = (name: string, _shopId: string): string => {
     .substring(0, 3)
     .toUpperCase();
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `${prefix}-${timestamp}-${random}`;
 };
 
@@ -76,21 +76,28 @@ export const createProduct = async (
     );
   }
 
-  const sku = data.sku || generateSku(data.name || "PRD", shopId);
-
-  const existingSku = await Product.findOne({
-    shopId,
-    sku,
-    isDeleted: false,
-  });
-  if (existingSku) {
-    throw new AppError("Product with this SKU already exists in this shop", 400);
+  let sku = data.sku || generateSku(data.name || "PRD", shopId);
+  let skuAttempts = 0;
+  while (skuAttempts < 5) {
+    const existingSku = await Product.findOne({
+      shopId,
+      sku,
+      isDeleted: false,
+    });
+    if (!existingSku) break;
+    skuAttempts++;
+    sku = generateSku(data.name || "PRD", shopId);
+  }
+  if (skuAttempts >= 5) {
+    throw new AppError("Unable to generate a unique SKU. Please provide one manually.", 400);
   }
 
-  if (data.barcode) {
+  const barcode = data.barcode && data.barcode.trim() !== "" ? data.barcode.trim() : null;
+
+  if (barcode) {
     const existingBarcode = await Product.findOne({
       shopId,
-      barcode: data.barcode,
+      barcode,
       isDeleted: false,
     });
     if (existingBarcode) {
@@ -122,7 +129,7 @@ export const createProduct = async (
     name: data.name,
     description: data.description,
     sku,
-    barcode: data.barcode,
+    barcode,
     brand: data.brand,
     purchasePrice,
     sellingPrice,
@@ -314,15 +321,18 @@ export const updateProduct = async (
     }
   }
 
-  if (data.barcode && data.barcode !== existing.barcode) {
-    const barcodeTaken = await Product.findOne({
-      shopId,
-      barcode: data.barcode,
-      _id: { $ne: productId },
-      isDeleted: false,
-    });
-    if (barcodeTaken) {
-      throw new AppError("Product with this barcode already exists in this shop", 400);
+  if (data.barcode !== undefined && data.barcode !== null && data.barcode.trim() !== "") {
+    const normalizedBarcode = data.barcode.trim();
+    if (normalizedBarcode !== existing.barcode) {
+      const barcodeTaken = await Product.findOne({
+        shopId,
+        barcode: normalizedBarcode,
+        _id: { $ne: productId },
+        isDeleted: false,
+      });
+      if (barcodeTaken) {
+        throw new AppError("Product with this barcode already exists in this shop", 400);
+      }
     }
   }
 
@@ -354,7 +364,9 @@ export const updateProduct = async (
   if (data.name !== undefined) updateFields.name = data.name;
   if (data.description !== undefined) updateFields.description = data.description;
   if (data.sku !== undefined) updateFields.sku = data.sku;
-  if (data.barcode !== undefined) updateFields.barcode = data.barcode;
+  if (data.barcode !== undefined) {
+    updateFields.barcode = data.barcode && data.barcode.trim() !== "" ? data.barcode.trim() : null;
+  }
   if (data.brand !== undefined) updateFields.brand = data.brand;
   if (data.unit !== undefined) updateFields.unit = data.unit;
   if (data.images !== undefined) updateFields.images = data.images;
