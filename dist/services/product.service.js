@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOutOfStockProducts = exports.getLowStockProducts = exports.getProductStatistics = exports.updateStock = exports.deleteProduct = exports.updateProduct = exports.getProductById = exports.getProducts = exports.createProduct = void 0;
+exports.getOutOfStockProducts = exports.getLowStockProducts = exports.getAllProducts = exports.getProductStatistics = exports.updateStock = exports.deleteProduct = exports.updateProduct = exports.getProductById = exports.getProducts = exports.createProduct = void 0;
 const Product_1 = require("../models/Product");
 const Category_1 = require("../models/Category");
 const Supplier_1 = require("../models/Supplier");
@@ -375,6 +375,13 @@ const getProductStatistics = async (shopId) => {
     };
 };
 exports.getProductStatistics = getProductStatistics;
+const getAllProducts = async (shopId) => {
+    return Product_1.Product.find({ shopId, isDeleted: false })
+        .populate("categoryId")
+        .sort({ createdAt: -1 })
+        .lean();
+};
+exports.getAllProducts = getAllProducts;
 const getLowStockProducts = async (shopId) => {
     return await Product_1.Product.find({
         shopId,

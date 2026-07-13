@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTopProductsHandler = exports.getSaleStatisticsHandler = exports.refundSaleHandler = exports.deleteSaleHandler = exports.updateSaleHandler = exports.getSaleHandler = exports.listSalesHandler = exports.createSaleHandler = void 0;
+exports.getTopProductsHandler = exports.getSaleStatisticsHandler = exports.refundSaleHandler = exports.deleteSaleHandler = exports.updateSaleHandler = exports.getSaleHandler = exports.getAllSalesHandler = exports.listSalesHandler = exports.createSaleHandler = void 0;
 const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const sale_service_1 = require("../services/sale.service");
@@ -39,6 +39,19 @@ exports.listSalesHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => 
     });
     (0, response_1.sendResponse)(res, 200, "Sales fetched successfully", result);
 });
+const getAllSalesHandler = async (req, res) => {
+    try {
+        if (!req.user?.shopId) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+        }
+        const sales = await (0, sale_service_1.getAllSales)(req.user.shopId);
+        res.json({ success: true, message: "Sales fetched", data: sales });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+    }
+};
+exports.getAllSalesHandler = getAllSalesHandler;
 exports.getSaleHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;
     const saleId = req.params.id;

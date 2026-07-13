@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateRequest = void 0;
 const AppError_1 = require("../utils/AppError");
+const logger_1 = require("../utils/logger");
 const validateRequest = (schema) => {
     return (req, _res, next) => {
         try {
@@ -15,6 +16,7 @@ const validateRequest = (schema) => {
         catch (error) {
             if (error instanceof Error && "issues" in error) {
                 const issues = error.issues;
+                logger_1.logger.error(`Validation failed: ${JSON.stringify(issues)}`);
                 const message = issues
                     .map((e) => `${e.path.join(".")}: ${e.message}`)
                     .join(", ");

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSupplierHandler = exports.updateSupplierHandler = exports.getSupplierHandler = exports.listSuppliersHandler = exports.createSupplierHandler = void 0;
+exports.deleteSupplierHandler = exports.updateSupplierHandler = exports.getSupplierHandler = exports.getAllSuppliersHandler = exports.listSuppliersHandler = exports.createSupplierHandler = void 0;
 const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const supplier_service_1 = require("../services/supplier.service");
@@ -26,9 +26,27 @@ exports.listSuppliersHandler = (0, asyncHandler_1.asyncHandler)(async (req, res)
     const isActive = req.query.isActive !== undefined
         ? req.query.isActive === "true"
         : undefined;
-    const result = await (0, supplier_service_1.getSuppliers)(shopId, { page, limit, search, isActive });
+    const result = await (0, supplier_service_1.getSuppliers)(shopId, {
+        page,
+        limit,
+        search,
+        isActive,
+    });
     (0, response_1.sendResponse)(res, 200, "Suppliers fetched successfully", result);
 });
+const getAllSuppliersHandler = async (req, res) => {
+    try {
+        if (!req.user?.shopId) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+        }
+        const suppliers = await (0, supplier_service_1.getAllSuppliers)(req.user.shopId);
+        res.json({ success: true, message: "Suppliers fetched", data: suppliers });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+    }
+};
+exports.getAllSuppliersHandler = getAllSuppliersHandler;
 exports.getSupplierHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;
     const supplierId = req.params.id;
@@ -38,7 +56,7 @@ exports.getSupplierHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) =
 exports.updateSupplierHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;
     const supplierId = req.params.id;
-    const { name, company, phone, email, address, tradeLicense, notes, isActive } = req.body;
+    const { name, company, phone, email, address, tradeLicense, notes, isActive, } = req.body;
     const supplier = await (0, supplier_service_1.updateSupplier)(shopId, supplierId, {
         name,
         company,

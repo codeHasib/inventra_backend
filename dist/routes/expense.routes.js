@@ -9,6 +9,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.requireAuth);
 router.use(auth_middleware_1.requireShopAccess);
 router.get("/statistics", expense_controller_1.getExpenseStatisticsHandler);
+router.get("/all", expense_controller_1.getAllExpensesHandler);
 router.post("/", (0, validate_middleware_1.validateRequest)(expense_validator_1.createExpenseSchema), expense_controller_1.createExpenseHandler);
 router.get("/", expense_controller_1.getExpensesHandler);
 router.get("/:id", expense_controller_1.getExpenseByIdHandler);

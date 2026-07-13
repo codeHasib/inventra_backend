@@ -9,6 +9,7 @@ const errorHandler = (err, _req, res, _next) => {
     if (err instanceof AppError_1.AppError) {
         statusCode = err.statusCode;
         message = err.message;
+        logger_1.logger.error(`${statusCode}: ${message}`);
     }
     else {
         logger_1.logger.error(`Unhandled error: ${err.message}`);

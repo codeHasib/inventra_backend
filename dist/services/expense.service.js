@@ -1,10 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getExpenseStatistics = exports.deleteExpense = exports.updateExpense = exports.getExpenseById = exports.getExpenses = exports.createExpense = void 0;
+exports.getExpenseStatistics = exports.deleteExpense = exports.updateExpense = exports.getExpenseById = exports.getExpenses = exports.createExpense = exports.getAllExpenses = void 0;
 const mongoose_1 = require("mongoose");
 const Expense_1 = require("../models/Expense");
 const AppError_1 = require("../utils/AppError");
 const index_1 = require("../constants/index");
+// ─── All (non-paginated) ───────────────────────────────────────────
+const getAllExpenses = async (shopId) => {
+    return Expense_1.Expense.find({ shopId: new mongoose_1.Types.ObjectId(shopId), isDeleted: false })
+        .sort({ expenseDate: -1 })
+        .lean();
+};
+exports.getAllExpenses = getAllExpenses;
 // ─── CRUD ──────────────────────────────────────────────────────────
 const createExpense = async (shopId, data) => {
     return Expense_1.Expense.create({

@@ -2,22 +2,24 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireShopAccess = exports.requireOnboarding = exports.requireStaff = exports.requireOwner = exports.requireAuth = void 0;
 const better_auth_1 = require("../config/better-auth");
-const node_1 = require("better-auth/integrations/node");
 const AppError_1 = require("../utils/AppError");
 const Shop_1 = require("../models/Shop");
 const requireAuth = async (req, _res, next) => {
     try {
-        const session = await better_auth_1.auth.api.getSession({
-            headers: (0, node_1.fromNodeHeaders)(req.headers),
+        const { fromNodeHeaders } = await import("better-auth/node");
+        const auth = await (0, better_auth_1.getAuth)();
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
         });
         if (!session) {
             return next(new AppError_1.AppError("Unauthorized", 401));
         }
+        const user = session.user;
         req.user = {
-            id: session.user.id,
-            email: session.user.email,
-            role: session.user.role || "staff",
-            shopId: session.user.shopId || null,
+            id: user.id,
+            email: user.email,
+            role: user.role || "staff",
+            shopId: user.shopId || null,
         };
         next();
     }

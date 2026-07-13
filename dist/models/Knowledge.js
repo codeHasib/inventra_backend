@@ -5,9 +5,9 @@ const mongoose_1 = require("mongoose");
 const index_1 = require("../enums/index");
 const knowledgeDocumentAnalysisSchema = new mongoose_1.Schema({
     summary: { type: String, default: "" },
-    businessInsights: { type: String, default: "" },
-    keywords: [{ type: String }],
-    recommendedActions: [{ type: String }],
+    keyPoints: [{ type: String }],
+    recommendations: [{ type: String }],
+    rawAnalysis: { type: String, default: "" },
 }, { _id: false });
 const knowledgeDocumentSchema = new mongoose_1.Schema({
     shopId: {

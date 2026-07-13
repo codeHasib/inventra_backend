@@ -23,18 +23,27 @@ exports.createShopHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) =>
 exports.createFirstShopHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const userId = req.user.id;
     const { name, slug, businessType, phone, email, address, logo, currency, timezone } = req.body;
-    const shop = await (0, shop_service_1.createFirstShop)(userId, {
-        name,
-        slug,
-        businessType,
-        phone,
-        email,
-        address,
-        logo,
-        currency,
-        timezone,
-    });
-    (0, response_1.sendResponse)(res, 201, "Shop created successfully", shop);
+    try {
+        const shop = await (0, shop_service_1.createFirstShop)(userId, {
+            name,
+            slug,
+            businessType,
+            phone,
+            email,
+            address,
+            logo,
+            currency,
+            timezone,
+        });
+        (0, response_1.sendResponse)(res, 201, "Shop created successfully", shop);
+    }
+    catch (error) {
+        if (error?.code === 11000) {
+            (0, response_1.sendResponse)(res, 400, "A shop with this slug already exists. Please choose a different one.");
+            return;
+        }
+        throw error;
+    }
 });
 exports.getShopHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const ownerId = req.user.id;

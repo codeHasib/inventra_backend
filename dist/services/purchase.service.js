@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPurchaseStatistics = exports.deletePurchase = exports.updatePurchase = exports.getPurchaseById = exports.getPurchases = exports.createPurchase = void 0;
+exports.getPurchaseStatistics = exports.deletePurchase = exports.updatePurchase = exports.getPurchaseById = exports.getAllPurchases = exports.getPurchases = exports.createPurchase = void 0;
 const Purchase_1 = require("../models/Purchase");
 const Product_1 = require("../models/Product");
 const Supplier_1 = require("../models/Supplier");
@@ -149,6 +149,14 @@ const getPurchases = async (shopId, options) => {
     };
 };
 exports.getPurchases = getPurchases;
+const getAllPurchases = async (shopId) => {
+    return Purchase_1.Purchase.find({ shopId, isDeleted: false })
+        .populate("supplierId", "name company")
+        .populate("items.productId", "name sku")
+        .sort({ purchaseDate: -1 })
+        .lean();
+};
+exports.getAllPurchases = getAllPurchases;
 const getPurchaseById = async (shopId, purchaseId) => {
     const purchase = await Purchase_1.Purchase.findOne({
         _id: purchaseId,

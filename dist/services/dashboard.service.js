@@ -27,6 +27,60 @@ const startOfYear = (date) => {
     const d = new Date(date);
     return new Date(d.getFullYear(), 0, 1);
 };
+const getDashboardStats = async (shopId) => {
+    const oid = new mongoose_1.Types.ObjectId(shopId);
+    const [salesCount, expensesCount, purchasesCount, productCount] = await Promise.all([
+        Sale_1.Sale.countDocuments({ shopId: oid, isDeleted: false }),
+        Expense_1.Expense.countDocuments({ shopId: oid, isDeleted: false }),
+        Purchase_1.Purchase.countDocuments({ shopId: oid, isDeleted: false }),
+        Product_1.Product.countDocuments({ shopId: oid, isDeleted: false }),
+    ]);
+    const [revenueAgg, expenseAgg, purchaseAgg] = await Promise.all([
+        Sale_1.Sale.aggregate([
+            {
+                $match: {
+                    shopId: oid,
+                    isDeleted: false,
+                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$grandTotal" },
+                },
+            },
+        ]),
+        Expense_1.Expense.aggregate([
+            { $match: { shopId: oid, isDeleted: false } },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$amount" },
+                },
+            },
+        ]),
+        Purchase_1.Purchase.aggregate([
+            { $match: { shopId: oid, isDeleted: false } },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$total" },
+                },
+            },
+        ]),
+    ]);
+    const totalRevenue = round(revenueAgg[0]?.total || 0);
+    const totalExpenses = round(expenseAgg[0]?.total || 0);
+    const totalPurchases = round(purchaseAgg[0]?.total || 0);
+    return {
+        totalRevenue,
+        totalExpenses,
+        totalPurchases,
+        totalSalesCount: salesCount,
+        totalProducts: productCount,
+    };
+};
 const getOverview = async (shopId) => {
     const oid = new mongoose_1.Types.ObjectId(shopId);
     const now = new Date();
@@ -239,52 +293,34 @@ const getRevenue = async (shopId) => {
     const todayStart = startOfDay(now);
     const monthStart = startOfMonth(now);
     const yearStart = startOfYear(now);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+    const baseMatch = {
+        shopId: oid,
+        isDeleted: false,
+        paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
+    };
     const [todayAgg, monthlyAgg, yearlyAgg, last7Days, last30Days, last12Months] = await Promise.all([
         Sale_1.Sale.aggregate([
-            {
-                $match: {
-                    shopId: oid,
-                    isDeleted: false,
-                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
-                    saleDate: { $gte: todayStart },
-                },
-            },
+            { $match: { ...baseMatch, saleDate: { $gte: todayStart } } },
             { $group: { _id: null, total: { $sum: "$grandTotal" } } },
         ]),
         Sale_1.Sale.aggregate([
-            {
-                $match: {
-                    shopId: oid,
-                    isDeleted: false,
-                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
-                    saleDate: { $gte: monthStart },
-                },
-            },
+            { $match: { ...baseMatch, saleDate: { $gte: monthStart } } },
             { $group: { _id: null, total: { $sum: "$grandTotal" } } },
         ]),
         Sale_1.Sale.aggregate([
-            {
-                $match: {
-                    shopId: oid,
-                    isDeleted: false,
-                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
-                    saleDate: { $gte: yearStart },
-                },
-            },
+            { $match: { ...baseMatch, saleDate: { $gte: yearStart } } },
             { $group: { _id: null, total: { $sum: "$grandTotal" } } },
         ]),
         Sale_1.Sale.aggregate([
-            {
-                $match: {
-                    shopId: oid,
-                    isDeleted: false,
-                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
-                    saleDate: { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
-                },
-            },
+            { $match: { ...baseMatch, saleDate: { $gte: sevenDaysAgo } } },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$saleDate", timezone: "UTC" },
+                    },
                     revenue: { $sum: "$grandTotal" },
                 },
             },
@@ -292,17 +328,12 @@ const getRevenue = async (shopId) => {
             { $project: { _id: 0, date: "$_id", revenue: { $round: ["$revenue", 2] } } },
         ]),
         Sale_1.Sale.aggregate([
-            {
-                $match: {
-                    shopId: oid,
-                    isDeleted: false,
-                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
-                    saleDate: { $gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
-                },
-            },
+            { $match: { ...baseMatch, saleDate: { $gte: thirtyDaysAgo } } },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$saleDate", timezone: "UTC" },
+                    },
                     revenue: { $sum: "$grandTotal" },
                 },
             },
@@ -310,17 +341,12 @@ const getRevenue = async (shopId) => {
             { $project: { _id: 0, date: "$_id", revenue: { $round: ["$revenue", 2] } } },
         ]),
         Sale_1.Sale.aggregate([
-            {
-                $match: {
-                    shopId: oid,
-                    isDeleted: false,
-                    paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED },
-                    saleDate: { $gte: new Date(now.getFullYear() - 1, now.getMonth(), 1) },
-                },
-            },
+            { $match: { ...baseMatch, saleDate: { $gte: twelveMonthsAgo } } },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m", date: "$saleDate" } },
+                    _id: {
+                        $dateToString: { format: "%Y-%m", date: "$saleDate", timezone: "UTC" },
+                    },
                     revenue: { $sum: "$grandTotal" },
                 },
             },
@@ -407,7 +433,7 @@ const getSales = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate", timezone: "UTC" } },
                     count: { $sum: 1 },
                     revenue: { $sum: "$grandTotal" },
                 },
@@ -544,7 +570,7 @@ const getCharts = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate", timezone: "UTC" } },
                     revenue: { $sum: "$grandTotal" },
                 },
             },
@@ -562,7 +588,7 @@ const getCharts = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate", timezone: "UTC" } },
                     revenue: { $sum: "$grandTotal" },
                 },
             },
@@ -580,7 +606,7 @@ const getCharts = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m", date: "$saleDate" } },
+                    _id: { $dateToString: { format: "%Y-%m", date: "$saleDate", timezone: "UTC" } },
                     revenue: { $sum: "$grandTotal" },
                 },
             },
@@ -598,7 +624,7 @@ const getCharts = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate" } },
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$saleDate", timezone: "UTC" } },
                     count: { $sum: 1 },
                     revenue: { $sum: "$grandTotal" },
                 },
@@ -623,7 +649,7 @@ const getCharts = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$purchaseDate" } },
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$purchaseDate", timezone: "UTC" } },
                     count: { $sum: 1 },
                     value: { $sum: "$total" },
                 },
@@ -648,7 +674,7 @@ const getCharts = async (shopId) => {
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$expenseDate" } },
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$expenseDate", timezone: "UTC" } },
                     count: { $sum: 1 },
                     value: { $sum: "$amount" },
                 },
@@ -683,20 +709,29 @@ const getTopProducts = async (shopId, limit) => {
             {
                 $group: {
                     _id: "$items.productId",
-                    productName: { $first: "$items.productName" },
-                    sku: { $first: "$items.sku" },
                     totalQuantitySold: { $sum: "$items.quantity" },
                     totalRevenue: { $sum: "$items.total" },
+                    embeddedProductName: { $first: "$items.productName" },
+                    embeddedSku: { $first: "$items.sku" },
                 },
             },
             { $sort: { totalQuantitySold: -1 } },
             { $limit: limit },
             {
+                $lookup: {
+                    from: "products",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "product",
+                },
+            },
+            { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+            {
                 $project: {
                     _id: 0,
                     productId: "$_id",
-                    productName: 1,
-                    sku: 1,
+                    productName: { $ifNull: ["$product.name", "$embeddedProductName"] },
+                    sku: { $ifNull: ["$product.sku", "$embeddedSku"] },
                     totalQuantitySold: 1,
                     totalRevenue: { $round: ["$totalRevenue", 2] },
                 },
@@ -784,29 +819,37 @@ const getTopProducts = async (shopId, limit) => {
             {
                 $group: {
                     _id: "$items.productId",
-                    productName: { $first: "$items.productName" },
-                    sku: { $first: "$items.sku" },
                     totalProfit: {
                         $sum: { $multiply: ["$items.profitPerUnit", "$items.quantity"] },
                     },
                     totalQuantitySold: { $sum: "$items.quantity" },
+                    embeddedProductName: { $first: "$items.productName" },
+                    embeddedSku: { $first: "$items.sku" },
                 },
             },
             { $sort: { totalProfit: -1 } },
             { $limit: limit },
             {
+                $lookup: {
+                    from: "products",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "product",
+                },
+            },
+            { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+            {
                 $project: {
                     _id: 0,
                     productId: "$_id",
-                    productName: 1,
-                    sku: 1,
+                    productName: { $ifNull: ["$product.name", "$embeddedProductName"] },
+                    sku: { $ifNull: ["$product.sku", "$embeddedSku"] },
                     totalProfit: { $round: ["$totalProfit", 2] },
                     totalQuantitySold: 1,
                 },
             },
         ]),
         (async () => {
-            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             const soldProducts = await Sale_1.Sale.aggregate([
                 { $match: { shopId: oid, isDeleted: false, paymentStatus: { $ne: index_1.PaymentStatus.REFUNDED } } },
                 { $unwind: "$items" },
@@ -867,9 +910,9 @@ const getTopProducts = async (shopId, limit) => {
                 {
                     $group: {
                         _id: "$items.productId",
-                        productName: { $first: "$items.productName" },
-                        sku: { $first: "$items.sku" },
                         totalSold: { $sum: "$items.quantity" },
+                        embeddedProductName: { $first: "$items.productName" },
+                        embeddedSku: { $first: "$items.sku" },
                     },
                 },
             ]);
@@ -899,8 +942,8 @@ const getTopProducts = async (shopId, limit) => {
                     : 0;
                 return {
                     productId: sp._id.toString(),
-                    productName: prod?.name || sp.productName,
-                    sku: prod?.sku || sp.sku,
+                    productName: prod?.name || sp.embeddedProductName,
+                    sku: prod?.sku || sp.embeddedSku,
                     currentStock: prod?.stock || 0,
                     totalSold: sp.totalSold,
                     turnoverRate: round(turnoverRate),
@@ -974,6 +1017,7 @@ const getWarnings = async (shopId) => {
     };
 };
 exports.dashboardService = {
+    getDashboardStats,
     getOverview,
     getRevenue,
     getSales,

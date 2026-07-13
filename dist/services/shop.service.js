@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteShop = exports.updateShop = exports.getShopById = exports.getShopsByOwner = exports.createFirstShop = exports.createShop = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const Shop_1 = require("../models/Shop");
+const Settings_1 = require("../models/Settings");
 const AppError_1 = require("../utils/AppError");
 const createShop = async (ownerId, shopData) => {
     const existingSlug = await Shop_1.Shop.findOne({
@@ -48,14 +49,38 @@ const createFirstShop = async (userId, shopData) => {
     if (existingSlug) {
         throw new AppError_1.AppError("A shop with this slug already exists", 400);
     }
-    const shop = await Shop_1.Shop.create({ ...shopData, ownerId: userId });
-    const shopId = shop._id instanceof mongoose_1.default.Types.ObjectId
-        ? shop._id.toHexString()
-        : String(shop._id);
-    await db
-        .collection("user")
-        .updateOne({ _id: new mongoose_1.default.Types.ObjectId(userId) }, { $set: { shopId, role: "owner" } });
-    return shop;
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const [shop] = await Shop_1.Shop.create([{ ...shopData, ownerId: userId }], { session });
+        const shopId = shop._id instanceof mongoose_1.default.Types.ObjectId
+            ? shop._id.toHexString()
+            : String(shop._id);
+        await Settings_1.Settings.create([
+            {
+                shopId: shop._id,
+                businessName: shopData.name ?? "",
+                phone: shopData.phone ?? "",
+                email: shopData.email ?? "",
+                address: shopData.address ?? "",
+                currency: shopData.currency ?? "USD",
+                timezone: shopData.timezone ?? "UTC",
+                businessType: shopData.businessType ?? "",
+            },
+        ], { session });
+        await db
+            .collection("user")
+            .updateOne({ _id: new mongoose_1.default.Types.ObjectId(userId) }, { $set: { shopId, role: "owner" } }, { session });
+        await session.commitTransaction();
+        return shop;
+    }
+    catch (error) {
+        await session.abortTransaction();
+        throw error;
+    }
+    finally {
+        session.endSession();
+    }
 };
 exports.createFirstShop = createFirstShop;
 const getShopsByOwner = async (ownerId, options) => {

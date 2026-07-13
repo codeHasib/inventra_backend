@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTopProducts = exports.getSaleStatistics = exports.refundSale = exports.deleteSale = exports.updateSale = exports.getSaleById = exports.getSales = exports.createSale = void 0;
+exports.getTopProducts = exports.getSaleStatistics = exports.refundSale = exports.deleteSale = exports.updateSale = exports.getSaleById = exports.getAllSales = exports.getSales = exports.createSale = void 0;
 const mongoose_1 = require("mongoose");
 const Sale_1 = require("../models/Sale");
 const Product_1 = require("../models/Product");
@@ -146,6 +146,12 @@ const getSales = async (shopId, options) => {
     };
 };
 exports.getSales = getSales;
+const getAllSales = async (shopId) => {
+    return Sale_1.Sale.find({ shopId, isDeleted: false })
+        .sort({ saleDate: -1 })
+        .lean();
+};
+exports.getAllSales = getAllSales;
 const getSaleById = async (shopId, saleId) => {
     const sale = await Sale_1.Sale.findOne({
         _id: saleId,

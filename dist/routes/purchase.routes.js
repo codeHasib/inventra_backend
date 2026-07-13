@@ -10,6 +10,7 @@ router.use(auth_middleware_1.requireAuth);
 router.use(auth_middleware_1.requireShopAccess);
 router.post("/", (0, validate_middleware_1.validateRequest)(purchase_validator_1.createPurchaseSchema), purchase_controller_1.createPurchaseHandler);
 router.get("/", (0, validate_middleware_1.validateRequest)(purchase_validator_1.listPurchasesSchema), purchase_controller_1.listPurchasesHandler);
+router.get("/all", purchase_controller_1.getAllPurchasesHandler);
 router.get("/statistics", purchase_controller_1.getPurchaseStatisticsHandler);
 router.get("/:id", (0, validate_middleware_1.validateRequest)(purchase_validator_1.purchaseIdParamSchema), purchase_controller_1.getPurchaseHandler);
 router.patch("/:id", (0, validate_middleware_1.validateRequest)(purchase_validator_1.updatePurchaseSchema), purchase_controller_1.updatePurchaseHandler);

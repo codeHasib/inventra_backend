@@ -33,12 +33,25 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getExpenseStatisticsHandler = exports.deleteExpenseHandler = exports.updateExpenseHandler = exports.getExpenseByIdHandler = exports.getExpensesHandler = exports.createExpenseHandler = void 0;
+exports.getExpenseStatisticsHandler = exports.deleteExpenseHandler = exports.updateExpenseHandler = exports.getExpenseByIdHandler = exports.getExpensesHandler = exports.createExpenseHandler = exports.getAllExpensesHandler = void 0;
 const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const expenseService = __importStar(require("../services/expense.service"));
 const VALID_SORT_FIELDS = ["amount", "expenseDate", "createdAt", "title"];
 const VALID_SORT_ORDERS = ["asc", "desc"];
+const getAllExpensesHandler = async (req, res) => {
+    try {
+        if (!req.user?.shopId) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+        }
+        const expenses = await expenseService.getAllExpenses(req.user.shopId);
+        res.json({ success: true, message: "Expenses fetched", data: expenses });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+    }
+};
+exports.getAllExpensesHandler = getAllExpensesHandler;
 exports.createExpenseHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;
     const { title, amount, category, paymentMethod, expenseDate, vendor, notes, receiptImage } = req.body;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPurchaseStatisticsHandler = exports.deletePurchaseHandler = exports.updatePurchaseHandler = exports.getPurchaseHandler = exports.listPurchasesHandler = exports.createPurchaseHandler = void 0;
+exports.getPurchaseStatisticsHandler = exports.deletePurchaseHandler = exports.updatePurchaseHandler = exports.getPurchaseHandler = exports.getAllPurchasesHandler = exports.listPurchasesHandler = exports.createPurchaseHandler = void 0;
 const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const purchase_service_1 = require("../services/purchase.service");
@@ -40,6 +40,19 @@ exports.listPurchasesHandler = (0, asyncHandler_1.asyncHandler)(async (req, res)
     });
     (0, response_1.sendResponse)(res, 200, "Purchases fetched successfully", result);
 });
+const getAllPurchasesHandler = async (req, res) => {
+    try {
+        if (!req.user?.shopId) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+        }
+        const purchases = await (0, purchase_service_1.getAllPurchases)(req.user.shopId);
+        res.json({ success: true, message: "Purchases fetched", data: purchases });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+    }
+};
+exports.getAllPurchasesHandler = getAllPurchasesHandler;
 exports.getPurchaseHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;
     const purchaseId = req.params.id;

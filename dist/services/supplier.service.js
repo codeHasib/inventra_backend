@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteSupplier = exports.updateSupplier = exports.getSupplierById = exports.getSuppliers = exports.createSupplier = void 0;
+exports.getAllSuppliers = getAllSuppliers;
 const Supplier_1 = require("../models/Supplier");
 const AppError_1 = require("../utils/AppError");
 const createSupplier = async (shopId, data) => {
@@ -24,6 +25,11 @@ const createSupplier = async (shopId, data) => {
     });
 };
 exports.createSupplier = createSupplier;
+async function getAllSuppliers(shopId) {
+    return Supplier_1.Supplier.find({ shopId, isDeleted: false })
+        .sort({ createdAt: -1 })
+        .lean();
+}
 const getSuppliers = async (shopId, options) => {
     const { page, limit, search, isActive } = options;
     const skip = (page - 1) * limit;

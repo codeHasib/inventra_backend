@@ -10,6 +10,7 @@ router.use(auth_middleware_1.requireAuth);
 router.use(auth_middleware_1.requireShopAccess);
 router.post("/", (0, validate_middleware_1.validateRequest)(supplier_validator_1.createSupplierSchema), supplier_controller_1.createSupplierHandler);
 router.get("/", (0, validate_middleware_1.validateRequest)(supplier_validator_1.listSuppliersSchema), supplier_controller_1.listSuppliersHandler);
+router.get("/all", auth_middleware_1.requireAuth, auth_middleware_1.requireShopAccess, supplier_controller_1.getAllSuppliersHandler);
 router.get("/:id", (0, validate_middleware_1.validateRequest)(supplier_validator_1.supplierIdParamSchema), supplier_controller_1.getSupplierHandler);
 router.patch("/:id", (0, validate_middleware_1.validateRequest)(supplier_validator_1.updateSupplierSchema), supplier_controller_1.updateSupplierHandler);
 router.delete("/:id", (0, validate_middleware_1.validateRequest)(supplier_validator_1.supplierIdParamSchema), supplier_controller_1.deleteSupplierHandler);

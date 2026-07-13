@@ -33,6 +33,7 @@ router.use(auth_middleware_1.requireShopAccess);
 router.post("/upload", upload.single("file"), ai_knowledge_controller_1.uploadKnowledgeHandler);
 router.get("/", ai_knowledge_controller_1.listKnowledgeHandler);
 router.get("/chat/history", ai_knowledge_controller_1.getChatHistoryHandler);
+router.get("/chat/export/:chatId", ai_knowledge_controller_1.exportChatPdfHandler);
 router.post("/chat", ai_knowledge_controller_1.chatHandler);
 router.get("/:id", ai_knowledge_controller_1.getKnowledgeHandler);
 router.get("/:id/text", ai_knowledge_controller_1.getExtractedTextHandler);

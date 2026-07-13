@@ -10,6 +10,7 @@ router.use(auth_middleware_1.requireAuth);
 router.use(auth_middleware_1.requireShopAccess);
 router.post("/", (0, validate_middleware_1.validateRequest)(sale_validator_1.createSaleSchema), sale_controller_1.createSaleHandler);
 router.get("/", (0, validate_middleware_1.validateRequest)(sale_validator_1.listSalesSchema), sale_controller_1.listSalesHandler);
+router.get("/all", sale_controller_1.getAllSalesHandler);
 router.get("/statistics", (0, validate_middleware_1.validateRequest)(sale_validator_1.saleStatisticsSchema), sale_controller_1.getSaleStatisticsHandler);
 router.get("/top-products", (0, validate_middleware_1.validateRequest)(sale_validator_1.topProductsSchema), sale_controller_1.getTopProductsHandler);
 router.get("/:id", (0, validate_middleware_1.validateRequest)(sale_validator_1.saleIdParamSchema), sale_controller_1.getSaleHandler);

@@ -11,7 +11,7 @@ exports.createExpenseSchema = zod_1.z.object({
         paymentMethod: zod_1.z.nativeEnum(index_1.PaymentMethod, {
             message: "Invalid payment method",
         }),
-        expenseDate: zod_1.z.string().datetime().optional(),
+        expenseDate: zod_1.z.coerce.date().optional(),
         vendor: zod_1.z.string().max(200).optional(),
         notes: zod_1.z.string().max(500).optional(),
         receiptImage: zod_1.z.string().optional(),
@@ -26,7 +26,7 @@ exports.updateExpenseSchema = zod_1.z.object({
         amount: zod_1.z.number().min(0.01).optional(),
         category: zod_1.z.string().min(1).max(100).optional(),
         paymentMethod: zod_1.z.nativeEnum(index_1.PaymentMethod).optional(),
-        expenseDate: zod_1.z.string().datetime().optional(),
+        expenseDate: zod_1.z.coerce.date().optional(),
         vendor: zod_1.z.string().max(200).optional(),
         notes: zod_1.z.string().max(500).optional(),
         receiptImage: zod_1.z.string().optional(),

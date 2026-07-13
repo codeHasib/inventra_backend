@@ -12,14 +12,37 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const morgan_1 = __importDefault(require("morgan"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const error_middleware_1 = require("./middlewares/error.middleware");
+const better_auth_1 = require("./config/better-auth");
 const index_1 = __importDefault(require("./routes/index"));
 exports.app = (0, express_1.default)();
 exports.app.use((0, helmet_1.default)());
 exports.app.use((0, cors_1.default)({
-    origin: process.env.BETTER_AUTH_URL,
+    origin: [
+        "https://inventra-ai-lac.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "Accept", "Cache-Control", "Pragma", "Expires"],
+    exposedHeaders: ["set-cookie"],
 }));
 exports.app.use((0, compression_1.default)());
+let toNodeHandlerFn = null;
+let authInitPromise = null;
+exports.app.use("/api/auth", async (req, res, next) => {
+    if (!toNodeHandlerFn) {
+        if (!authInitPromise) {
+            authInitPromise = (async () => {
+                const auth = await (0, better_auth_1.getAuth)();
+                const { toNodeHandler } = await import("better-auth/node");
+                toNodeHandlerFn = toNodeHandler(auth);
+            })();
+        }
+        await authInitPromise;
+    }
+    toNodeHandlerFn(req, res, next);
+});
 exports.app.use(express_1.default.json());
 exports.app.use(express_1.default.urlencoded({ extended: true }));
 exports.app.use((0, cookie_parser_1.default)());
@@ -30,6 +53,7 @@ const limiter = (0, express_rate_limit_1.default)({
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: "Too many requests, try again later" },
+    skip: (req) => req.originalUrl.startsWith("/api/auth"),
 });
 exports.app.use("/api", limiter);
 exports.app.get("/health", (_req, res) => {

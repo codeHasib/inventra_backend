@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOutOfStockProductsHandler = exports.getLowStockProductsHandler = exports.getProductStatisticsHandler = exports.updateStockHandler = exports.deleteProductHandler = exports.updateProductHandler = exports.getProductHandler = exports.listProductsHandler = exports.createProductHandler = void 0;
+exports.getOutOfStockProductsHandler = exports.getAllProductsHandler = exports.getLowStockProductsHandler = exports.getProductStatisticsHandler = exports.updateStockHandler = exports.deleteProductHandler = exports.updateProductHandler = exports.getProductHandler = exports.listProductsHandler = exports.createProductHandler = void 0;
 const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const product_service_1 = require("../services/product.service");
@@ -122,6 +122,19 @@ exports.getLowStockProductsHandler = (0, asyncHandler_1.asyncHandler)(async (req
     const products = await (0, product_service_1.getLowStockProducts)(shopId);
     (0, response_1.sendResponse)(res, 200, "Low stock products fetched successfully", products);
 });
+const getAllProductsHandler = async (req, res) => {
+    try {
+        if (!req.user?.shopId) {
+            return res.status(401).json({ success: false, message: "Unauthorized: Shop context missing." });
+        }
+        const products = await (0, product_service_1.getAllProducts)(req.user.shopId);
+        res.json({ success: true, message: "Products fetched", data: products });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: "Server error occurred while fetching data." });
+    }
+};
+exports.getAllProductsHandler = getAllProductsHandler;
 exports.getOutOfStockProductsHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;
     const products = await (0, product_service_1.getOutOfStockProducts)(shopId);

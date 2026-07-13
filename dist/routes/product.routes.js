@@ -9,6 +9,7 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.requireAuth);
 router.use(auth_middleware_1.requireShopAccess);
 router.post("/", (0, validate_middleware_1.validateRequest)(product_validator_1.createProductSchema), product_controller_1.createProductHandler);
+router.get("/all", product_controller_1.getAllProductsHandler);
 router.get("/", (0, validate_middleware_1.validateRequest)(product_validator_1.listProductsSchema), product_controller_1.listProductsHandler);
 router.get("/statistics", product_controller_1.getProductStatisticsHandler);
 router.get("/low-stock", product_controller_1.getLowStockProductsHandler);
