@@ -49,6 +49,11 @@ export async function getAuth() {
         },
       },
     },
+    cookie: {
+      sameSite: "none",
+      secure: true,
+      domain: null,
+    },
   });
 
   logger.info("better-auth instance initialized");
