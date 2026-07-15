@@ -11,6 +11,15 @@ const errorHandler = (err, _req, res, _next) => {
         message = err.message;
         logger_1.logger.error(`${statusCode}: ${message}`);
     }
+    else if (err.code === 11000 ||
+        err.name === "MongoServerError") {
+        statusCode = 400;
+        const duplicateField = Object.keys(err.keyPattern || {}).join(", ");
+        message = duplicateField
+            ? `A product with this ${duplicateField} already exists.`
+            : "A product with this SKU, Slug, or Barcode already exists.";
+        logger_1.logger.error(`400 DuplicateKey: ${message}`);
+    }
     else {
         logger_1.logger.error(`Unhandled error: ${err.message}`);
     }

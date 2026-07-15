@@ -22,7 +22,7 @@ const productSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true, maxlength: 200 },
     description: { type: String, default: "", trim: true },
     sku: { type: String, required: true, trim: true, uppercase: true },
-    barcode: { type: String, default: "", trim: true },
+    barcode: { type: String, default: null, trim: true, sparse: true },
     brand: { type: String, default: "", trim: true },
     purchasePrice: { type: Number, required: true, min: 0 },
     sellingPrice: { type: Number, required: true, min: 0 },

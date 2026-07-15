@@ -5,28 +5,42 @@ const asyncHandler_1 = require("../utils/asyncHandler");
 const response_1 = require("../utils/response");
 const product_service_1 = require("../services/product.service");
 exports.createProductHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
-    const shopId = req.user.shopId;
-    const { categoryId, supplierId, name, description, sku, barcode, brand, purchasePrice, sellingPrice, currentStock, minimumStock, maximumStock, reorderLevel, unit, images, expiryDate, manufactureDate, } = req.body;
-    const product = await (0, product_service_1.createProduct)(shopId, {
-        categoryId,
-        supplierId,
-        name,
-        description,
-        sku,
-        barcode,
-        brand,
-        purchasePrice,
-        sellingPrice,
-        currentStock,
-        minimumStock,
-        maximumStock,
-        reorderLevel,
-        unit,
-        images,
-        expiryDate: expiryDate ? new Date(expiryDate) : undefined,
-        manufactureDate: manufactureDate ? new Date(manufactureDate) : undefined,
-    });
-    (0, response_1.sendResponse)(res, 201, "Product created successfully", product);
+    try {
+        const shopId = req.user.shopId;
+        const { categoryId, supplierId, name, description, sku, barcode, brand, purchasePrice, sellingPrice, currentStock, minimumStock, maximumStock, reorderLevel, unit, images, expiryDate, manufactureDate, } = req.body;
+        const product = await (0, product_service_1.createProduct)(shopId, {
+            categoryId,
+            supplierId,
+            name,
+            description,
+            sku,
+            barcode,
+            brand,
+            purchasePrice,
+            sellingPrice,
+            currentStock,
+            minimumStock,
+            maximumStock,
+            reorderLevel,
+            unit,
+            images,
+            expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+            manufactureDate: manufactureDate ? new Date(manufactureDate) : undefined,
+        });
+        (0, response_1.sendResponse)(res, 201, "Product created successfully", product);
+    }
+    catch (error) {
+        if (error?.code === 11000) {
+            const duplicateField = Object.keys(error.keyPattern || {}).join(", ");
+            return res.status(400).json({
+                success: false,
+                message: duplicateField
+                    ? `A product with this ${duplicateField} already exists.`
+                    : "A product with this SKU, Slug, or Barcode already exists.",
+            });
+        }
+        throw error;
+    }
 });
 exports.listProductsHandler = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const shopId = req.user.shopId;

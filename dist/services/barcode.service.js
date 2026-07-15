@@ -226,7 +226,7 @@ const generateBarcodeSheet = async (shopId, productIds, options) => {
             });
         }
         const barcodeY = showName ? y + 20 : y + 4;
-        drawBarcode(doc, product.barcode, x + 4, barcodeY, labelWidth - 12, 30);
+        drawBarcode(doc, product.barcode || "", x + 4, barcodeY, labelWidth - 12, 30);
         const textY = barcodeY + 46;
         doc.fontSize(7).font("Courier").text(`SKU: ${product.sku}`, x + 4, textY, {
             width: labelWidth - 12,

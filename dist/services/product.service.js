@@ -24,7 +24,7 @@ const generateSku = (name, _shopId) => {
         .substring(0, 3)
         .toUpperCase();
     const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `${prefix}-${timestamp}-${random}`;
 };
 const createProduct = async (shopId, data) => {
@@ -44,19 +44,27 @@ const createProduct = async (shopId, data) => {
     if (!supplier) {
         throw new AppError_1.AppError("Invalid Supplier ID or Supplier does not belong to this shop", 400);
     }
-    const sku = data.sku || generateSku(data.name || "PRD", shopId);
-    const existingSku = await Product_1.Product.findOne({
-        shopId,
-        sku,
-        isDeleted: false,
-    });
-    if (existingSku) {
-        throw new AppError_1.AppError("Product with this SKU already exists in this shop", 400);
+    let sku = data.sku || generateSku(data.name || "PRD", shopId);
+    let skuAttempts = 0;
+    while (skuAttempts < 5) {
+        const existingSku = await Product_1.Product.findOne({
+            shopId,
+            sku,
+            isDeleted: false,
+        });
+        if (!existingSku)
+            break;
+        skuAttempts++;
+        sku = generateSku(data.name || "PRD", shopId);
     }
-    if (data.barcode) {
+    if (skuAttempts >= 5) {
+        throw new AppError_1.AppError("Unable to generate a unique SKU. Please provide one manually.", 400);
+    }
+    const barcode = data.barcode && data.barcode.trim() !== "" ? data.barcode.trim() : null;
+    if (barcode) {
         const existingBarcode = await Product_1.Product.findOne({
             shopId,
-            barcode: data.barcode,
+            barcode,
             isDeleted: false,
         });
         if (existingBarcode) {
@@ -84,7 +92,7 @@ const createProduct = async (shopId, data) => {
         name: data.name,
         description: data.description,
         sku,
-        barcode: data.barcode,
+        barcode,
         brand: data.brand,
         purchasePrice,
         sellingPrice,
@@ -224,15 +232,18 @@ const updateProduct = async (shopId, productId, data) => {
             throw new AppError_1.AppError("Product with this SKU already exists in this shop", 400);
         }
     }
-    if (data.barcode && data.barcode !== existing.barcode) {
-        const barcodeTaken = await Product_1.Product.findOne({
-            shopId,
-            barcode: data.barcode,
-            _id: { $ne: productId },
-            isDeleted: false,
-        });
-        if (barcodeTaken) {
-            throw new AppError_1.AppError("Product with this barcode already exists in this shop", 400);
+    if (data.barcode !== undefined && data.barcode !== null && data.barcode.trim() !== "") {
+        const normalizedBarcode = data.barcode.trim();
+        if (normalizedBarcode !== existing.barcode) {
+            const barcodeTaken = await Product_1.Product.findOne({
+                shopId,
+                barcode: normalizedBarcode,
+                _id: { $ne: productId },
+                isDeleted: false,
+            });
+            if (barcodeTaken) {
+                throw new AppError_1.AppError("Product with this barcode already exists in this shop", 400);
+            }
         }
     }
     if (data.categoryId) {
@@ -266,8 +277,9 @@ const updateProduct = async (shopId, productId, data) => {
         updateFields.description = data.description;
     if (data.sku !== undefined)
         updateFields.sku = data.sku;
-    if (data.barcode !== undefined)
-        updateFields.barcode = data.barcode;
+    if (data.barcode !== undefined) {
+        updateFields.barcode = data.barcode && data.barcode.trim() !== "" ? data.barcode.trim() : null;
+    }
     if (data.brand !== undefined)
         updateFields.brand = data.brand;
     if (data.unit !== undefined)

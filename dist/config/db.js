@@ -6,20 +6,39 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectDatabase = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const logger_1 = require("../utils/logger");
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+    throw new Error("Please define the MONGODB_URI environment variable inside .env");
+}
+// Initialize global cache to survive serverless hot-reloads
+let cached = global.mongoose;
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
+}
 const connectDatabase = async () => {
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-        throw new Error("MONGODB_URI is not defined in environment variables");
+    if (cached.conn) {
+        return cached.conn;
+    }
+    if (!cached.promise) {
+        const opts = {
+            bufferCommands: false,
+            maxPoolSize: 10,
+            serverSelectionTimeoutMS: 5000,
+        };
+        logger_1.logger.info("Establishing new MongoDB connection...");
+        cached.promise = mongoose_1.default.connect(MONGODB_URI, opts).then((m) => {
+            logger_1.logger.info(`MongoDB connected successfully to database: ${m.connection.db?.databaseName ?? "unknown"}`);
+            return m;
+        });
     }
     try {
-        await mongoose_1.default.connect(mongoUri);
-        const dbName = mongoose_1.default.connection.db?.databaseName ?? "unknown";
-        logger_1.logger.info(`MongoDB connected successfully to database: ${dbName}`);
+        cached.conn = await cached.promise;
     }
-    catch (error) {
-        logger_1.logger.error(`MongoDB connection failed: ${error}`);
-        process.exit(1);
+    catch (e) {
+        cached.promise = null;
+        throw e;
     }
+    return cached.conn;
 };
 exports.connectDatabase = connectDatabase;
 //# sourceMappingURL=db.js.map
