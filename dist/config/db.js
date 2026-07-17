@@ -23,7 +23,8 @@ const connectDatabase = async () => {
         const opts = {
             bufferCommands: false,
             maxPoolSize: 10,
-            serverSelectionTimeoutMS: 5000,
+            serverSelectionTimeoutMS: 15000,
+            socketTimeoutMS: 45000,
         };
         logger_1.logger.info("Establishing new MongoDB connection...");
         cached.promise = mongoose_1.default.connect(MONGODB_URI, opts).then((m) => {

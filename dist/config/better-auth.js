@@ -32,10 +32,13 @@ async function getAuth() {
         },
         secret: BETTER_AUTH_SECRET,
         trustedOrigins: [
-            "https://inventra-ai-lac.vercel.app",
+            "https://inventra-ai.netlify.app",
             "http://localhost:3000",
+            "http://localhost:5173",
         ],
         advanced: {
+            cookiePrefix: "inventra",
+            crossSubDomainCookies: true,
             defaultCookieAttributes: {
                 sameSite: "none",
                 secure: true,

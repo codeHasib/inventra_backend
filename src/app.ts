@@ -11,7 +11,9 @@ import routes from "./routes/index";
 
 export const app = express();
 
-app.use(helmet());
+app.set("trust proxy", 1);
+
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use((req, res, next) => {
   const requestedHeaders = req.headers["access-control-request-headers"];
   if (requestedHeaders) {
@@ -54,7 +56,7 @@ app.use(morgan("dev"));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests, try again later" },

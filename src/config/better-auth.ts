@@ -42,6 +42,8 @@ export async function getAuth() {
       "http://localhost:5173",
     ],
     advanced: {
+      cookiePrefix: "inventra",
+      crossSubDomainCookies: true,
       defaultCookieAttributes: {
         sameSite: "none",
         secure: true,

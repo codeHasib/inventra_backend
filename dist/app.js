@@ -15,17 +15,21 @@ const error_middleware_1 = require("./middlewares/error.middleware");
 const better_auth_1 = require("./config/better-auth");
 const index_1 = __importDefault(require("./routes/index"));
 exports.app = (0, express_1.default)();
-exports.app.use((0, helmet_1.default)());
+exports.app.set("trust proxy", 1);
+exports.app.use((0, helmet_1.default)({ contentSecurityPolicy: false }));
+exports.app.use((req, res, next) => {
+    const requestedHeaders = req.headers["access-control-request-headers"];
+    if (requestedHeaders) {
+        res.header("Access-Control-Allow-Headers", requestedHeaders);
+    }
+    next();
+});
 exports.app.use((0, cors_1.default)({
-    origin: [
-        "https://inventra-ai-lac.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ],
+    origin: function (origin, callback) {
+        callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "Accept", "Cache-Control", "Pragma", "Expires"],
-    exposedHeaders: ["set-cookie"],
 }));
 exports.app.use((0, compression_1.default)());
 let toNodeHandlerFn = null;
@@ -49,7 +53,7 @@ exports.app.use((0, cookie_parser_1.default)());
 exports.app.use((0, morgan_1.default)("dev"));
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 5000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: "Too many requests, try again later" },

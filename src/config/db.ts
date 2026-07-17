@@ -25,7 +25,8 @@ export const connectDatabase = async (): Promise<typeof mongoose> => {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
     };
 
     logger.info("Establishing new MongoDB connection...");
