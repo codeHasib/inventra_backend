@@ -12,6 +12,13 @@ import routes from "./routes/index";
 export const app = express();
 
 app.use(helmet());
+app.use((req, res, next) => {
+  const requestedHeaders = req.headers["access-control-request-headers"];
+  if (requestedHeaders) {
+    res.header("Access-Control-Allow-Headers", requestedHeaders);
+  }
+  next();
+});
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -19,7 +26,6 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   }),
 );
 app.use(compression());
