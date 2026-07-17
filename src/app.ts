@@ -14,15 +14,12 @@ export const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: [
-      "https://inventra-ai-lac.vercel.app",
-      "http://localhost:3000",
-      "http://localhost:5173",
-    ],
+    origin: function (origin, callback) {
+      callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "Accept", "Cache-Control", "Pragma", "Expires"],
-    exposedHeaders: ["set-cookie"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   }),
 );
 app.use(compression());
